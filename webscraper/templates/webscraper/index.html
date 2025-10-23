@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html><head><title>Base App</title></head>
+<body>
+    <h1>It works! ({{ environment|upper }})</h1>
+    <form method="post">
+        {% csrf_token %}
+        <button type="submit">Run Background Task</button>
+    </form>
+    <h3>Recent Logs (Austria Time):</h3>
+    {% for log in logs %}
+        <p>{{ log.message }} - {{ log.created_at }}</p>
+    {% empty %}
+        <p>No logs yet</p>
+    {% endfor %}
+</body>
+</html>
