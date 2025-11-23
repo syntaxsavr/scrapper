@@ -55,3 +55,8 @@ jobs:
         docker build -t $IMAGE_NAME:$TAG .
         docker push $IMAGE_NAME:$TAG
 
+    # 7. Upload coverage reports to Codecov
+    - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
