@@ -8,10 +8,10 @@
     </div>
     <div class="nav-right">
         {% if user.is_authenticated %}
-            <span>Welcome, {{ user.username }}</span>
-            <form method="post" action="{% url 'logout' %}">
+            <span class="welcome-text">Welcome, {{ user.username }}</span>
+            <form method="post" action="{% url 'logout' %}" class="logout-form">
                 {% csrf_token %}
-                <button type="submit" class="btn">Logout</button>
+                <button type="submit" class="btn logout-btn">Logout</button>
             </form>
         {% else %}
             <a href="{% url 'login' %}" class="btn">Login</a>
@@ -21,8 +21,15 @@
 </div>
 <div class="search-container">
     <form id="search-form">
-        <input type="text" name="search" placeholder="Search..." required>
+        <input type="text" name="search" placeholder="Search...">
         <button type="submit">Search</button>
     </form>
 </div>
+
+{% if search %}
+<div class="content">
+    <h2>Results for "{{ search }}":</h2>
+</div>
+{% endif %}
+
 {% endblock %}

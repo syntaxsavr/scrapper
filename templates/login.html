@@ -8,10 +8,12 @@
         <a href="{% url 'signup' %}" class="btn btn-primary">Sign Up</a>
     </div>
 </div>
-<h2>Login</h2>
-<form method="post">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit">Login</button>
-</form>
+<div class="authentication-container">
+    <h2>Login</h2>
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">Login</button>
+    </form>
+</div>
 {% endblock %}

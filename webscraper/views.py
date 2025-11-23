@@ -23,7 +23,11 @@ def login_view(request):
             return redirect("home")
     else:
         form = AuthenticationForm()
-    return render(request, "login.html", {"form": form})
+        
+    context = {
+        "form": form
+    }
+    return render(request, "login.html", context)
 
 def signup_view(request):
     if request.user.is_authenticated:
@@ -37,7 +41,11 @@ def signup_view(request):
             return redirect("home")
     else:
         form = UserCreationForm()
-    return render(request, "signup.html", {"form": form})
+
+    context = {
+        "form": form
+    }
+    return render(request, "signup.html", context)
 
 def index(request):
     if request.method == 'POST':
