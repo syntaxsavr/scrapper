@@ -1,7 +1,7 @@
 import os
 import sentry_sdk
-from sentry_sdk.integrations.django import DjangoIntegration
 from pathlib import Path
+import sentry_sdk # SENTRY (similar like sonarcloud) please install please install please install please install aaaaaaaaa please install
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -18,6 +18,14 @@ ENVIRONMENT = os.getenv('ENVIRONMENT', 'development')
 SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-default-key-change-me')
 DEBUG = os.getenv('DEBUG', 'True').lower() == 'true'
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
+
+# Sentry Configuration
+sentry_sdk.init(
+    dsn="xxxxxxxxxxxxxxxxxxxxxxxxx",
+    # Add data like request headers and IP for users,
+    # see https://docs.sentry.io/platforms/python/data-management/data-collected/ for more info
+    send_default_pii=True,
+)
 
 INSTALLED_APPS = [
     'django.contrib.admin',
