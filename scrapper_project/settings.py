@@ -1,4 +1,6 @@
 import os
+import sentry_sdk
+from sentry_sdk.integrations.django import DjangoIntegration
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -98,3 +100,13 @@ if ENVIRONMENT == 'production':
     SECURE_BROWSER_XSS_FILTER = True
     SECURE_CONTENT_TYPE_NOSNIFF = True
     X_FRAME_OPTIONS = 'DENY'
+
+sentry_sdk.init(
+    dsn="https://ee072512232cdec772c5ac4a3569d7e1@o4510414210400256.ingest.de.sentry.io/4510414297628752",
+    # Add data like request headers and IP for users,
+    # see https://docs.sentry.io/platforms/python/data-management/data-collected/ for more info
+    integrations=[DjangoIntegration()],
+    environment=ENVIRONMENT,  # 'development', 'production', etc.
+    traces_sample_rate=0.5,   # Adjust for performance monitoring (0.0–1.0)
+    send_default_pii=True,
+)
