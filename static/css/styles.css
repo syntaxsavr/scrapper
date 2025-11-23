@@ -1,7 +1,77 @@
+:root {
+    --bg-color: #121212;
+    --text-color: #fff;
+    --primary-color: #BB86FC;
+    --nav-bg: #0c0c0c;
+    --hover-color: #333333;
+    --search-hover-color: #9a4fff;
+}
+
 body {
-    background-color: #121212;
-    color: #E0E0E0;
+    background-color: var(--bg-color);
+    color: var(--text-color);
     font-family: Arial, sans-serif;
     margin: 0;
     padding: 0;
+}
+
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 32px;
+    background-color: var(--nav-bg);
+}
+
+a {
+    text-decoration: none;
+    color: var(--text-color);
+}
+
+.nav-right a {
+    margin-left: 16px;
+    padding: 8px 16px;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+}
+
+.nav-right a.btn-primary {
+    background-color: var(--primary-color);
+    color: var(--bg-color);
+}
+
+.nav-right a:hover {
+    background-color: var(--hover-color);
+    color: var(--text-color);
+}
+
+.search-container {
+    display: flex;
+    justify-content: center;
+    margin-top: 10vh;
+}
+
+#search-form input[type="text"] {
+    width: 25vw;
+    min-width: 250px;
+    max-width: 600px;
+    padding: 12px 16px;
+    border-radius: 8px 0 0 8px;
+    border: none;
+    outline: none;
+    font-size: 16px;
+}
+
+#search-form button {
+    padding: 12px 20px;
+    border: none;
+    background-color: var(--primary-color);
+    color: var(--bg-color);
+    border-radius: 0 8px 8px 0;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+#search-form button:hover {
+    background-color: var(--search-hover-color);
 }
