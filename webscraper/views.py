@@ -2,6 +2,13 @@ from django.shortcuts import render
 from .tasks import background_work
 from .models import Log
 
+def home_view(request):
+    search = request.GET.get("search", "")
+    context = {
+        "search": search,
+    }
+    return render(request, "home.html", context)
+
 def index(request):
     if request.method == 'POST':
         background_work.delay()

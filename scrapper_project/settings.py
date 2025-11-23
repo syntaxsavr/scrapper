@@ -42,7 +42,7 @@ ROOT_URLCONF = 'scrapper_project.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [os.path.join(BASE_DIR, "templates")],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -85,8 +85,10 @@ TIME_ZONE = 'Europe/Vienna'
 USE_I18N = False
 USE_TZ = True
 
-STATIC_URL = '/static/'
+STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+STATICFILES_DIRS = [os.path.join(BASE_DIR, STATIC_URL)]
 
 # SECURITY (Production only)
 if ENVIRONMENT == 'production':
