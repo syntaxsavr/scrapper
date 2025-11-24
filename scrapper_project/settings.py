@@ -1,7 +1,7 @@
 import os
 import sentry_sdk
 from pathlib import Path
-import sentry_sdk # SENTRY (similar like sonarcloud) please install please install please install please install aaaaaaaaa please install
+from sentry_sdk.integrations.django import DjangoIntegration
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -24,8 +24,12 @@ sentry_sdk.init(
     dsn=os.getenv("SENTRY_DSN", ""), # Sentry DSN from environment variable, dont use if emppty to not get interrupted at dev
     # Add data like request headers and IP for users,
     # see https://docs.sentry.io/platforms/python/data-management/data-collected/ for more info
+    integrations=[DjangoIntegration()],
+    environment=ENVIRONMENT,  # 'development', 'production', etc.
+    traces_sample_rate=0.5,   # Adjust for performance monitoring (0.0–1.0)
     send_default_pii=True,
 )
+
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -108,13 +112,3 @@ if ENVIRONMENT == 'production':
     SECURE_BROWSER_XSS_FILTER = True
     SECURE_CONTENT_TYPE_NOSNIFF = True
     X_FRAME_OPTIONS = 'DENY'
-
-sentry_sdk.init(
-    dsn="https://ee072512232cdec772c5ac4a3569d7e1@o4510414210400256.ingest.de.sentry.io/4510414297628752",
-    # Add data like request headers and IP for users,
-    # see https://docs.sentry.io/platforms/python/data-management/data-collected/ for more info
-    integrations=[DjangoIntegration()],
-    environment=ENVIRONMENT,  # 'development', 'production', etc.
-    traces_sample_rate=0.5,   # Adjust for performance monitoring (0.0–1.0)
-    send_default_pii=True,
-)
