@@ -1,4 +1,5 @@
 from django.shortcuts import render
+from scrapper_project.settings import ENVIRONMENT
 from .tasks import background_work
 from .models import Log
 
