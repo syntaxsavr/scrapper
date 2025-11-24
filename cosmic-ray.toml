@@ -1,0 +1,68 @@
+[cosmic-ray]
+module-path = "webscraper"
+timeout = 30.0
+excluded-modules = []
+test-command = "coverage run manage.py test --keepdb"
+
+[cosmic-ray.distributor]
+name = "local"
+
+[cosmic-ray.filters.operators-filter]
+exclude-operators = [
+  "core/NumberReplacer",
+  "core/ReplaceBinaryOperator_RShift_Add",
+  "core/ReplaceBinaryOperator_RShift_Sub",
+  "core/ReplaceBinaryOperator_RShift_Mul",
+  "core/ReplaceBinaryOperator_RShift_Div",
+  "core/ReplaceBinaryOperator_RShift_FloorDiv",
+  "core/ReplaceBinaryOperator_RShift_Mod",
+  "core/ReplaceBinaryOperator_RShift_Pow",
+  "core/ReplaceBinaryOperator_RShift_LShift",
+  "core/ReplaceBinaryOperator_RShift_BitOr",
+  "core/ReplaceBinaryOperator_RShift_BitAnd",
+  "core/ReplaceBinaryOperator_RShift_BitXor",
+  "core/ReplaceBinaryOperator_LShift_Add",
+  "core/ReplaceBinaryOperator_LShift_Sub",
+  "core/ReplaceBinaryOperator_LShift_Mul",
+  "core/ReplaceBinaryOperator_LShift_Div",
+  "core/ReplaceBinaryOperator_LShift_FloorDiv",
+  "core/ReplaceBinaryOperator_LShift_Mod",
+  "core/ReplaceBinaryOperator_LShift_Pow",
+  "core/ReplaceBinaryOperator_LShift_RShift",
+  "core/ReplaceBinaryOperator_LShift_BitOr",
+  "core/ReplaceBinaryOperator_LShift_BitAnd",
+  "core/ReplaceBinaryOperator_LShift_BitXor",
+  "core/ReplaceBinaryOperator_BitOr_Add",
+  "core/ReplaceBinaryOperator_BitOr_Sub",
+  "core/ReplaceBinaryOperator_BitOr_Mul",
+  "core/ReplaceBinaryOperator_BitOr_Div",
+  "core/ReplaceBinaryOperator_BitOr_FloorDiv",
+  "core/ReplaceBinaryOperator_BitOr_Mod",
+  "core/ReplaceBinaryOperator_BitOr_Pow",
+  "core/ReplaceBinaryOperator_BitOr_RShift",
+  "core/ReplaceBinaryOperator_BitOr_LShift",
+  "core/ReplaceBinaryOperator_BitOr_BitAnd",
+  "core/ReplaceBinaryOperator_BitOr_BitXor",
+  "core/ReplaceBinaryOperator_BitAnd_Add",
+  "core/ReplaceBinaryOperator_BitAnd_Sub",
+  "core/ReplaceBinaryOperator_BitAnd_Mul",
+  "core/ReplaceBinaryOperator_BitAnd_Div",
+  "core/ReplaceBinaryOperator_BitAnd_FloorDiv",
+  "core/ReplaceBinaryOperator_BitAnd_Mod",
+  "core/ReplaceBinaryOperator_BitAnd_Pow",
+  "core/ReplaceBinaryOperator_BitAnd_RShift",
+  "core/ReplaceBinaryOperator_BitAnd_LShift",
+  "core/ReplaceBinaryOperator_BitAnd_BitOr",
+  "core/ReplaceBinaryOperator_BitAnd_BitXor",
+  "core/ReplaceBinaryOperator_BitXor_Add",
+  "core/ReplaceBinaryOperator_BitXor_Sub",
+  "core/ReplaceBinaryOperator_BitXor_Mul",
+  "core/ReplaceBinaryOperator_BitXor_Div",
+  "core/ReplaceBinaryOperator_BitXor_FloorDiv",
+  "core/ReplaceBinaryOperator_BitXor_Mod",
+  "core/ReplaceBinaryOperator_BitXor_Pow",
+  "core/ReplaceBinaryOperator_BitXor_RShift",
+  "core/ReplaceBinaryOperator_BitXor_LShift",
+  "core/ReplaceBinaryOperator_BitXor_BitOr",
+  "core/ReplaceBinaryOperator_BitXor_BitAnd",
+]

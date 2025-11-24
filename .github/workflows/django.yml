@@ -30,19 +30,31 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
+        pip install cosmic-ray
+        pip install coverage
 
     # 4. Run tests
     - name: Run Tests
-      run: python manage.py test
+      run: |
+        coverage run manage.py test --keepdb
+        coverage report -m      
 
-    # 5. Log in to Docker Hub using token
+    # 5. Run mutation tests
+    - name: Mutation Tests
+      run: |
+        cosmic-ray init cosmic-ray.toml cosmic-ray.sqlite
+        cosmic-ray --verbosity=INFO baseline cosmic-ray.toml
+        cosmic-ray exec cosmic-ray.toml cosmic-ray.sqlite
+        cr-html cosmic-ray.sqlite > report.html
+
+    # 6. Log in to Docker Hub using token
     - name: Log in to Docker Hub
       uses: docker/login-action@v2
       with:
         username: ${{ secrets.DOCKER_USERNAME }}   # docker ID
         password: ${{ secrets.DOCKER_TOKEN }}      # access token
 
-    # 6. Build and push Docker image
+    # 7. Build and push Docker image
     - name: Build and push Docker image
       run: |
         IMAGE_NAME=s1ziegler/crapper
@@ -55,7 +67,7 @@ jobs:
         docker build -t $IMAGE_NAME:$TAG .
         docker push $IMAGE_NAME:$TAG
 
-    # 7. Upload coverage reports to Codecov
+    # 8. Upload coverage reports to Codecov
     - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v5
         with:
