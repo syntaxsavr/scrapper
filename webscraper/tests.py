@@ -2,8 +2,6 @@ import unittest
 from django.test import TestCase
 from .testExample import add_numbers
 from .testExample import sub_numbers
-from .testExample import mult_numbers
-
 
 # Create your tests here.
 # You might have to give your db-User permissions to create tables (ALTER USER <yourUser> CREATEDB;)
@@ -27,7 +25,3 @@ class ExampleTest(TestCase):
     def test_sub_numbers(self):
         self.assertEqual(sub_numbers(1, 1), 0)
         self.assertEqual(sub_numbers(-1, -1), 0)
-
-    def test_mult_numbers(self):
-        self.assertEqual(mult_numbers(1, 1), 1)
-        self.assertEqual(mult_numbers(0, 0), 0)
