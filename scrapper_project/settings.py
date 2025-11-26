@@ -85,10 +85,10 @@ TIME_ZONE = 'Europe/Vienna'
 USE_I18N = False
 USE_TZ = True
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-STATICFILES_DIRS = [os.path.join(BASE_DIR, STATIC_URL)]
+STATICFILES_DIRS = [BASE_DIR / 'static']
 
 # SECURITY (Production only)
 if ENVIRONMENT == 'production':
