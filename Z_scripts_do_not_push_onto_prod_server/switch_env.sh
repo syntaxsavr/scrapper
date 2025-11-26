@@ -6,3 +6,4 @@ if [[ "$ENV" == "production" || "$ENV" == "testing" || "$ENV" == "development" ]
 else
     echo "Usage: ./switch_env.sh [development|testing|production]"
 fi
+#aaaaaaaaarghhhhhhhhhhhhhh
