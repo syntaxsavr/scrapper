@@ -1,25 +1,31 @@
-# Use an official Python runtime as a parent image
+# Use official Python runtime
 FROM python:3.12-slim
 
-# Set environment variables
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
+# Environment variables
+ENV PYTHONDONTWRITEBYTECODE 1
+ENV PYTHONUNBUFFERED 1
 
 # Set working directory
 WORKDIR /app
 
-# Install system dependencies (if any)
+# Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
+    libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements file and install Python dependencies
+# Install Python dependencies
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the rest of the application
+# Copy project
 COPY . .
 
-# Command to run the app (replace with your entrypoint)
-CMD ["python", "main.py"]
+# Collect static files (optional, for production)
+# RUN python manage.py collectstatic --noinput
 
+# Expose port (default Django port)
+EXPOSE 8000
+
+# Run migrations and start server (for development)
+CMD ["sh", "-c", "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"]
