@@ -14,7 +14,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         if (!query) {
             resultsContainer.innerHTML =
-                '<p style="color: red; text-align: center;">Please enter a search term.</p>';
+                '<p class="error">Please enter a search term.</p>';
             return;
         }
 
@@ -42,7 +42,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.error('Error starting search:', error);
                 resultsContainer.innerHTML =
                     '<div class="content">' +
-                    '<p style="color: red;">Error starting search. Please try again.</p>' +
+                    '<p class="error">Error starting search. Please try again.</p>' +
                     '</div>';
             });
     }
@@ -76,7 +76,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     clearInterval(pollInterval);
                     resultsContainer.innerHTML =
                         '<div class="content">' +
-                        '<p style="color: red;">Error checking search status.</p>' +
+                        '<p class="error">Error checking search status.</p>' +
                         '</div>';
                 });
         }, 1000);

@@ -3,12 +3,6 @@ from .models import Log, Dataset
 import time
 
 @shared_task
-def background_work():
-    time.sleep(2)
-    Log.objects.create(message=f"Task completed in {ENVIRONMENT}!")
-    return "Done"
-
-@shared_task
 def search_datasets(query):
     from django.db.models import Q
     results = Dataset.objects.filter(
@@ -20,5 +14,5 @@ def search_datasets(query):
     return {
         "query": query,
         "count": count,
-        "results": list(results.values('id', 'title', 'description'))
+        "results": list(results.values("id", "title", "description"))
     }
