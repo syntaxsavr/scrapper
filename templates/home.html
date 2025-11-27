@@ -19,17 +19,16 @@
         {% endif %}
     </div>
 </div>
+
 <div class="search-container">
     <form id="search-form">
-        <input type="text" name="search" placeholder="Search...">
+        <input type="text" name="search" id="search-input" placeholder="Search datasets..." required>
         <button type="submit">Search</button>
     </form>
 </div>
 
-{% if search %}
-<div class="content">
-    <h2>Results for "{{ search }}":</h2>
-</div>
-{% endif %}
+<div id="results-container"></div>
+
+<script src="{% static 'js/search.js' %}"></script>
 
 {% endblock %}

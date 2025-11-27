@@ -21,5 +21,5 @@ GRANT ALL PRIVILEGES ON DATABASE scrapper_prod TO scrapper_prod_user;
 \q
 EOF
 
-echo ✅ PostgreSQL setup complete for Windows!
+echo PostgreSQL setup complete for Windows!
 pause
