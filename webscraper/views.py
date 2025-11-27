@@ -20,7 +20,7 @@ def api_search(request):
     return JsonResponse({
         "task_id": task.id,
         "status": "started",
-        "message": f"Search started for "{query}"",
+        "message": f"Search started for '{query}'",
     })
 
 def api_task_status(_request, task_id):
