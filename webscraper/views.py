@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect
 from django.http import JsonResponse
 from .tasks import background_work, search_datasets
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
-from django.contrib.auth import login, logout, authenticate
+from django.contrib.auth import login
 from .models import Log, Dataset
 from celery.result import AsyncResult
 
@@ -10,17 +10,17 @@ def home_view(request):
     return render(request, "home.html")
 
 def api_search(request):
-    query = request.GET.get('q', '')
+    query = request.GET.get("q", "")
 
     if not query:
-        return JsonResponse({'error': 'No query provided'}, status=400)
+        return JsonResponse({"error": "No query provided"}, status=400)
 
     task = search_datasets.delay(query)
 
     return JsonResponse({
-        'task_id': task.id,
-        'status': 'started',
-        'message': f'Search started for "{query}"'
+        "task_id": task.id,
+        "status": "started",
+        "message": f"Search started for "{query}"",
     })
 
 def api_task_status(_request, task_id):
@@ -30,17 +30,17 @@ def api_task_status(_request, task_id):
         result = task.result
 
         results = Dataset.objects.filter(
-            id__in=[r['id'] for r in result['results']]
+            id__in=[r["id"] for r in result["results"]]
         )
 
         return JsonResponse({
-            'status': 'completed',
-            'count': result['count'],
-            'results': list(results.values('id', 'title', 'description'))
+            "status": "completed",
+            "count": result["count"],
+            "results": list(results.values("id", "title", "description")),
         })
     else:
         return JsonResponse({
-            'status': 'pending',
+            "status": "pending",
         })
 
 def login_view(request):
@@ -78,12 +78,3 @@ def signup_view(request):
         "form": form
     }
     return render(request, "signup.html", context)
-
-def index(request):
-    if request.method == 'POST':
-        background_work.delay()
-    logs = Log.objects.all().order_by('-created_at')[:5]
-    return render(request, 'webscraper/index.html', {
-        'logs': logs, 
-        'environment': ENVIRONMENT
-    })
