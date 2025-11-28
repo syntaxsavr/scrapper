@@ -51,9 +51,10 @@ DB_PORT=
 
 ### Run Migrations
 After setting up the database and environment file:
+
 ```bash
 python manage.py migrate
-
+```
 ## Test Coverage
 This project uses Codecov for tracking test coverage. Public reports are available at:
 [https://app.codecov.io/gh/syntaxsavr/scrapper](https://app.codecov.io/gh/syntaxsavr/scrapper)
