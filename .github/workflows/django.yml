@@ -18,6 +18,7 @@ jobs:
     strategy:
       max-parallel: 4
 
+    # Defaults (change later)
     services:
       db:
         image: postgres

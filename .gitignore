@@ -3,3 +3,7 @@ __pycache__/
 venv/
 .env*
 *.log
+nul
+Procfile
+stop_all.bat
+.vscode/
