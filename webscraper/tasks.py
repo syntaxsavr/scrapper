@@ -1,22 +1,37 @@
 from celery import shared_task
+from setuptools.compat.py311 import shutil_rmtree
 
-from scrapers.kaggle.kaggle_scraper import KaggleScraper
-from scrapper_project.settings import ENVIRONMENT
-from .models import Log
+from scrapers.hugging_face.scraper_hugging_face import scrape_hugging_face_datasets
+from .models import Log, Dataset
 import time
 
 @shared_task
-def background_work():
-    time.sleep(2)
-    Log.objects.create(message=f"Task completed in {ENVIRONMENT}!")
-    return "Done"
+def search_datasets(query):
+    from django.db.models import Q
+    results = Dataset.objects.filter(
+        Q(title__icontains=query) | Q(description__icontains=query)
+    )
 
+    count = results.count()
+
+    return {
+        "query": query,
+        "count": count,
+        "results": list(results.values("id", "title", "description"))
+    }
 
 @shared_task
-def run_kaggle_scraper():
-    scraper = KaggleScraper()
-    try:
-        datasets = scraper.scrape()
-        Log.objects.create(message=f"Kaggle scraped {len(datasets)} datasets")
-    except Exception as e:
-        Log.objects.create(message=f"Kaggle scraper error: {str(e)}")
+def run_hugging_face_search_task(query: str, limit: int = 50):
+    scraped_items = scrape_hugging_face_datasets(query=query, limit=limit)
+    added_count = 0
+
+    for item in scraped_items:
+        if not Dataset.objects.filter(title=item["title"]).exists():
+            Dataset.objects.create(title=item["title"], description=item["description"])
+            added_count += 1
+
+    return {
+        "query": query,
+        "total_scraped": len(scraped_items),
+        "added": added_count
+    }
