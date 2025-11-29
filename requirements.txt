@@ -1,4 +1,0 @@
-huggingface-hub
-django==5.2.8
-celery==5.5.3
-psycopg2==2.9.11
