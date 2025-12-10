@@ -1,7 +1,5 @@
 from celery import shared_task
-from setuptools.compat.py311 import shutil_rmtree
-
-from scrapers.hugging_face.scraper_hugging_face import scrape_hugging_face_datasets
+from scrapers.hugging_face.scraper_hugging_face import fetch_huggingface_datasets
 from .models import Log, Dataset
 import time
 
@@ -22,7 +20,7 @@ def search_datasets(query):
 
 @shared_task
 def run_hugging_face_search_task(query: str, limit: int = 50):
-    scraped_items = scrape_hugging_face_datasets(query=query, limit=limit)
+    scraped_items = fetch_huggingface_datasets(query=query, limit=limit)
     added_count = 0
 
     for item in scraped_items:
