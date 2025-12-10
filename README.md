@@ -58,3 +58,47 @@ python manage.py migrate
 ## Test Coverage
 This project uses Codecov for tracking test coverage. Public reports are available at:
 [https://app.codecov.io/gh/syntaxsavr/scrapper](https://app.codecov.io/gh/syntaxsavr/scrapper)
+## Quick Start with Docker
+
+## Docker CI/CD
+### Prerequisites
+- Docker
+- Docker Compose
+
+### Running the Application
+
+1. **Clone the repository**
+```bash
+   git clone <your-repo-url>
+   cd scrapper
+```
+Adjust the env to the current needs or use ENV file. Docker branch will soon come down the pike!
+
+2. **Start the application**
+```bash
+   docker-compose up
+```
+
+3. **Access the application**
+   - Web App: http://localhost:8000
+   - Admin Panel: http://localhost:8000/admin
+
+### Stopping the Application
+
+Press `CTRL+C` in the terminal, then:
+```bash
+docker-compose down
+```
+
+### Clean Reset (remove all data)
+```bash
+docker-compose down -v
+```
+
+## Running from Docker Hub
+
+You can also run the pre-built image directly:
+```bash
+docker pull s1ziegler/crapper:latest  # Production
+docker pull s1ziegler/crapper:dev     # Development
+```
