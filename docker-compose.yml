@@ -1,0 +1,45 @@
+services:
+  db:
+    image: postgres:latest
+    environment:
+      POSTGRES_DB: scrapper_db
+      POSTGRES_USER: scrapper_user
+      POSTGRES_PASSWORD: password123
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U scrapper_user -d scrapper_db"]  # Added -d flag
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+
+  web:
+    image: s1ziegler/crapper:dev
+    environment:
+      ENVIRONMENT: development
+      SECRET_KEY: django-insecure-showcase-key
+      DEBUG: "True"
+      ALLOWED_HOSTS: localhost,127.0.0.1
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: scrapper_db
+      DB_USER: scrapper_user
+      DB_PASSWORD: password123
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/0
+      SENTRY_DSN: ""
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
