@@ -1,4 +1,5 @@
 from celery import shared_task
+from scrapers.hugging_face.scraper_hugging_face import fetch_huggingface_datasets
 from .models import Log, Dataset
 import time
 
@@ -15,4 +16,20 @@ def search_datasets(query):
         "query": query,
         "count": count,
         "results": list(results.values("id", "title", "description"))
+    }
+
+@shared_task
+def run_hugging_face_search_task(query: str, limit: int = 50):
+    scraped_items = fetch_huggingface_datasets(query=query, limit=limit)
+    added_count = 0
+
+    for item in scraped_items:
+        if not Dataset.objects.filter(title=item["title"]).exists():
+            Dataset.objects.create(title=item["title"], description=item["description"])
+            added_count += 1
+
+    return {
+        "query": query,
+        "total_scraped": len(scraped_items),
+        "added": added_count
     }

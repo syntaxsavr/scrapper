@@ -1,6 +1,7 @@
 from django.shortcuts import render, redirect
 from django.http import JsonResponse
-from .tasks import search_datasets
+from django.views.decorators.http import require_GET
+from .tasks import search_datasets, run_hugging_face_search_task
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth import login
 from .models import Log, Dataset
@@ -78,3 +79,20 @@ def signup_view(request):
         "form": form
     }
     return render(request, "signup.html", context)
+
+@require_GET
+def api_scrape_hugging_face_search(request):
+    query = request.GET.get("q")
+    if not query:
+        return JsonResponse({"error": "Query parameter 'q' is required."}, status=400)
+
+    limit = int(request.GET.get("limit", 50))
+
+    task = run_hugging_face_search_task.delay(query, limit)
+
+    return JsonResponse({
+        "message": f"Scraping Hugging Face datasets for '{query}' started",
+        "task_id": task.id,
+        "status": "started",
+        "limit": limit
+    })
