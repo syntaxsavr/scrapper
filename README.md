@@ -60,7 +60,7 @@ This project uses Codecov for tracking test coverage. Public reports are availab
 [https://app.codecov.io/gh/syntaxsavr/scrapper](https://app.codecov.io/gh/syntaxsavr/scrapper)
 ## Quick Start with Docker
 
-# Docker CI/CD
+## Docker CI/CD
 ### Prerequisites
 - Docker
 - Docker Compose
