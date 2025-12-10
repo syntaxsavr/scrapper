@@ -1,6 +1,6 @@
 services:
   db:
-    image: postgres:latest
+    image: postgres:15
     environment:
       POSTGRES_DB: scrapper_db
       POSTGRES_USER: scrapper_user
