@@ -1,5 +1,7 @@
 import os
+import sentry_sdk
 from pathlib import Path
+from sentry_sdk.integrations.django import DjangoIntegration
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -16,6 +18,18 @@ ENVIRONMENT = os.getenv('ENVIRONMENT', 'development')
 SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-default-key-change-me')
 DEBUG = os.getenv('DEBUG', 'True').lower() == 'true'
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
+
+# Sentry Configuration
+sentry_sdk.init(
+    dsn=os.getenv("SENTRY_DSN", ""), # Sentry DSN from environment variable, dont use if emppty to not get interrupted at dev
+    # Add data like request headers and IP for users,
+    # see https://docs.sentry.io/platforms/python/data-management/data-collected/ for more info
+    integrations=[DjangoIntegration()],
+    environment=ENVIRONMENT,  # 'development', 'production', etc.
+    traces_sample_rate=0.5,   # Adjust for performance monitoring (0.0–1.0)
+    send_default_pii=True,
+)
+
 
 INSTALLED_APPS = [
     'django.contrib.admin',
