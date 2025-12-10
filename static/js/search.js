@@ -111,24 +111,4 @@ document.addEventListener('DOMContentLoaded', function() {
         div.textContent = text;
         return div.innerHTML;
     }
-
-    function startHuggingFaceSearch(query) {
-        fetch("/api/scrape-hugging-face-search/?q=" + encodeURIComponent(query))
-        .then(r => r.json())
-        .then(data => {
-            const task_id = data.task_id;
-            console.log("Hugging Face Scraper task started:", task_id);
-
-            const poll = setInterval(() => {
-                fetch("/api/status/" + task_id + "/")
-                    .then(r => r.json())
-                    .then(status => {
-                        if (status.status === "completed") {
-                            clearInterval(poll);
-                            console.log('Scraper finished. Added ${status.results.added} datasets.');
-                        }
-                    });
-            }, 1000);
-        });
-    }
 });
