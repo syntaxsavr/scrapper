@@ -70,7 +70,7 @@ This project uses Codecov for tracking test coverage. Public reports are availab
 1. **Clone the repository**
 ```bash
    git clone <your-repo-url>
-   cd crapper
+   cd scrapper
 ```
 Adjust the env to the current needs or use ENV file. Docker branch will soon come down the pike!
 
