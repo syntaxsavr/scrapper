@@ -97,3 +97,7 @@ jobs:
       uses: codecov/codecov-action@v5
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
+
+    # 10. Linting
+    - name: Linting with ruff
+      run: ruff check --output-format=github
