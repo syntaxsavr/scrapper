@@ -2,10 +2,12 @@ from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.common.by import By
 from bs4 import BeautifulSoup
 from urllib.parse import quote_plus
 from urllib.parse import urljoin
+import time
 
 BASE_URL = "https://www.kaggle.com"
 
@@ -30,7 +32,10 @@ class KaggleScraperSelenium:
 
         # wait for JS to render the dataset lists (or none if the query has no results)
         wait = WebDriverWait(self.driver, 2)
-        wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, "div > ul > li")))
+        try:
+            wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, "div > ul > li")))
+        except TimeoutException:
+            return None # abort-no data
         return self.driver.page_source
 
     def parse_datasets(self, html: str, results: list):
@@ -50,7 +55,6 @@ class KaggleScraperSelenium:
         for li in target_ul.find_all("li", recursive=False):
             a = li.find("a", href=True)
             link = urljoin(BASE_URL, a["href"]) if a else None
-            print(link)
             title = a.get("aria-label") if a and a.get("aria-label") else None
 
             img = li.find("img", src=True)
@@ -81,7 +85,6 @@ class KaggleScraperSelenium:
             return 0
 
         li_items = ul.find_all("li", recursive=False)
-        print(len(li_items))
         # in therory ther should always be 3 one prev, next and the current page, even if prev, next may not be visible
         if len(li_items) < 3:
             return 1 if len(li_items) > 0 else 0
@@ -101,36 +104,43 @@ class KaggleScraperSelenium:
                 # fewer than 3 <li> → no next button
                 return False
             # use pages as sanity check
-            if len(li_items) != pages:
+            if (len(li_items)-2) != pages:
                 return False
-
             # last <li> = next button
-            next_li = li_items[len(li_items)]
+            next_li = li_items[len(li_items)-1]
             next_btn = next_li.find_element(By.TAG_NAME, "button")
-
             # check if disabled
             if next_btn.get_attribute("disabled") is not None:
                 return False
 
-            next_btn.click()
+            self.driver.execute_script("arguments[0].scrollIntoView(true);", next_btn)
+            WebDriverWait(self.driver, 5).until(EC.element_to_be_clickable(next_btn))
+            self.driver.execute_script("arguments[0].click();", next_btn)
 
+            time.sleep(0.4)
             wait = WebDriverWait(self.driver, 2)
-            wait.until(
-                EC.visibility_of_element_located((By.CSS_SELECTOR, "div > ul > li"))
-            )
+            wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, "div > ul > li")))
+            print("so far so good")
             return True
 
         except Exception:
+            print(Exception)
             return False
 
     def scrape(self, term: str):
         results = []
         html = self.fetch_page(term)
+        if html is None:
+            return results
         pages = self.parse_num_of_pages(html)
-
+        # give it proper time to load everything even if we find everything in the dom, we may not be able to navigate the page
         for _i in range(pages):
             self.parse_datasets(html, results)
-            self.click_next_button(pages)
+            # we may be too fast for the button
+            if(self.click_next_button(pages) is False):
+                break
+            html = self.driver.page_source
+            
         return results
 
     def close(self):
@@ -148,10 +158,11 @@ class KaggleScraperSelenium:
 if __name__ == "__main__":
     scraper = KaggleScraperSelenium()
     try:
-        results = scraper.scrape("house")
+        results = scraper.scrape("car")
         print("\nDatasets found:")
         for idx, title in enumerate(results, 1):
             print(f"{idx}. {title}")
         print(f"\nTotal datasets: {len(results)}")
     finally:
+        
         scraper.close()
