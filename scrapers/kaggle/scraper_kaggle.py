@@ -8,6 +8,7 @@ from bs4 import BeautifulSoup
 from urllib.parse import quote_plus
 from urllib.parse import urljoin
 import time
+import math
 
 BASE_URL = "https://www.kaggle.com"
 
@@ -130,21 +131,31 @@ class KaggleScraperSelenium:
             print(Exception)
             return False
 
-    def scrape(self, term: str):
+    def scrape(self, term: str, limit: int):
         results = []
         html = self.fetch_page(term)
         if html is None:
             return results
         pages = self.parse_num_of_pages(html)
+
+        if limit < 0 or limit > 200 or limit is None:
+            limit = 200
+        
+        pageLimit = math.ceil(limit / 20) 
+        if pages < pageLimit:
+            pageLimit = pages
+
+
         # give it proper time to load everything even if we find everything in the dom, we may not be able to navigate the page
-        for _i in range(pages):
+
+        for _i in range(pageLimit):
             self.parse_datasets(html, results)
             # we may be too fast for the button
             if self.click_next_button(pages) is False:
                 break
             html = self.driver.page_source
 
-        return results
+        return results[:limit]
 
     def close(self):
         self.driver.quit()
@@ -153,7 +164,7 @@ class KaggleScraperSelenium:
 # if __name__ == "__main__":
 #     scraper = KaggleScraperSelenium()
 #     try:
-#         results = scraper.scrape("car")
+#         results = scraper.scrape("car",31)
 #         print("\nDatasets found:")
 #         for idx, title in enumerate(results, 1):
 #             print(f"{idx}. {title}")
