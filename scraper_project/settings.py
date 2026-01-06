@@ -1,5 +1,5 @@
 import os
-import sentry_sdk  # temporarily disabled for development
+import sentry_sdk 
 from pathlib import Path
 from sentry_sdk.integrations.django import DjangoIntegration  # temporarily disabled
 
@@ -10,7 +10,7 @@ SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-default-key-change-me')
 DEBUG = os.getenv('DEBUG', 'True').lower() == 'true'
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
 
-# Sentry Configuration - temporarily disabled for development
+# Sentry Configuration 
 sentry_sdk.init(
      dsn=os.getenv("SENTRY_DSN", ""), # Sentry DSN from environment variable, dont use if emppty to not get interrupted at dev
      # Add data like request headers and IP for users,
