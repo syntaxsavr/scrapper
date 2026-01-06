@@ -78,7 +78,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     .then(statusData => {
                         if (statusData.status === 'completed') {
                             primaryComplete = true;
-                            console.log('Primary search complete. Found', statusData.count, 'results');
+                            console.log('Primary search complete. Found', length(statusData.results), 'results');
                             displayResults(query, statusData);
                             return { completed: true };
                         } else {
@@ -121,7 +121,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     .then(response => response.json())
                     .then(statusData => {
                         if (statusData.status === 'completed' && statusData.results) {
-                            console.log('Retrigger complete. Updated results:', statusData.count);
+                            console.log('Retrigger complete. Updated results:', length(statusData.results));
                             displayResults(query, statusData);
                             completedRetriggerTaskIds.push(retriggerTaskId);
                             return { completed: true };
@@ -172,7 +172,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function displayResults(query, statusData) {
-        if (statusData.count === 0) {
+        if (length(statusData.results) === 0) {
             resultsContainer.innerHTML =
                 '<div class="content">' +
                 '<h2>No results found for "' + escapeHtml(query) + '"</h2>' +
@@ -180,7 +180,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 '</div>';
         } else {
             let html = '<div class="content">';
-            html += '<h2>Found ' + statusData.count + ' result(s) for "' + escapeHtml(query) + '"</h2>';
+            html += '<h2>Found ' + length(statusData.results) + ' result(s) for "' + escapeHtml(query) + '"</h2>';
             html += '<div class="results-list">';
 
             statusData.results.forEach(function(result) {

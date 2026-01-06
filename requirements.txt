@@ -4,3 +4,4 @@ celery==5.5.3
 psycopg2==2.9.11
 redis==7.1.0
 sentry-sdk==2.46.0
+selenium==4.18.1

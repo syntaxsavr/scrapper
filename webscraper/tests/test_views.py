@@ -1,9 +1,11 @@
 from django.test import TestCase
 from django.urls import reverse
 from webscraper.models import Dataset
-from webscraper.tests.constants import OK, REDIRECT, NOT_FOUND
+from webscraper.tests.constants import OK, REDIRECT, NOT_FOUND, BAD_REQUEST
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import UserCreationForm
+from unittest.mock import patch, Mock
+from celery.result import AsyncResult
 
 class ViewTests(TestCase):
     def test_home_view_renders(self):
@@ -175,3 +177,142 @@ class ViewTests(TestCase):
 
         self.assertEqual(response.status_code, OK)
         self.assertEqual(User.objects.filter(username="alice").count(), 1)
+
+    @patch("webscraper.views.search_datasets")
+    @patch("webscraper.views.scrap_huggingface_datasets")
+    def test_api_search_valid_query(self, mock_scrap_hf, mock_search):
+        mock_local_task = Mock()
+        mock_local_task.id = "local-task-123"
+        mock_search.delay.return_value = mock_local_task
+
+        mock_hf_task = Mock()
+        mock_hf_task.id = "hf-task-456"
+        mock_scrap_hf.delay.return_value = mock_hf_task
+
+        url = reverse("api_search")
+        response = self.client.get(url, {"q": "machine learning"})
+
+        self.assertEqual(response.status_code, OK)
+
+        data = response.json()
+        self.assertIn("task_ids", data)
+        self.assertEqual(len(data["task_ids"]), 2)
+        self.assertIn("local-task-123", data["task_ids"])
+        self.assertIn("hf-task-456", data["task_ids"])
+
+        mock_search.delay.assert_called_once_with("machine learning")
+        mock_scrap_hf.delay.assert_called_once_with("machine learning")
+
+    @patch("webscraper.views.search_datasets")
+    @patch("webscraper.views.scrap_huggingface_datasets")
+    def test_api_search_empty_query(self, mock_scrap_hf, mock_search):
+        url = reverse("api_search")
+        response = self.client.get(url, {"q": ""})
+
+        self.assertEqual(response.status_code, BAD_REQUEST)
+
+        data = response.json()
+        self.assertIn("error", data)
+        self.assertEqual(data["error"], "No query provided")
+
+        mock_search.delay.assert_not_called()
+        mock_scrap_hf.delay.assert_not_called()
+
+    @patch("webscraper.views.search_datasets")
+    @patch("webscraper.views.scrap_huggingface_datasets")
+    def test_api_search_no_query_parameter(self, mock_scrap_hf, mock_search):
+        url = reverse("api_search")
+        response = self.client.get(url)
+
+        self.assertEqual(response.status_code, BAD_REQUEST)
+
+        data = response.json()
+        self.assertIn("error", data)
+        self.assertEqual(data["error"], "No query provided")
+
+        mock_search.delay.assert_not_called()
+        mock_scrap_hf.delay.assert_not_called()
+
+    @patch("webscraper.views.AsyncResult")
+    def test_api_task_status_completed_with_results(self, mock_async_result):
+        mock_task = Mock()
+        mock_task.ready.return_value = True
+        mock_task.result = {
+            "results": [
+                {"id": 1, "title": "Dataset 1", "description": "Desc 1"},
+                {"id": 2, "title": "Dataset 2", "description": "Desc 2"},
+                {"id": 3, "title": "Dataset 3", "description": "Desc 3"}
+            ]
+        }
+        mock_async_result.return_value = mock_task
+
+        url = reverse("api_task_status", kwargs={"task_id": "test-task-123"})
+        response = self.client.get(url)
+
+        self.assertEqual(response.status_code, OK)
+
+        data = response.json()
+        self.assertEqual(data["status"], "completed")
+        self.assertEqual(len(data["results"]), 3)
+        self.assertEqual(data["results"][0]["title"], "Dataset 1")
+
+        mock_async_result.assert_called_once_with("test-task-123")
+
+    @patch("webscraper.views.AsyncResult")
+    def test_api_task_status_completed_with_retrigger(self, mock_async_result):
+        mock_task = Mock()
+        mock_task.ready.return_value = True
+        mock_task.result = {
+            "retrigger_task_id": "retrigger-task-789"
+        }
+        mock_async_result.return_value = mock_task
+
+        url = reverse("api_task_status", kwargs={"task_id": "test-task-456"})
+        response = self.client.get(url)
+
+        self.assertEqual(response.status_code, OK)
+
+        data = response.json()
+        self.assertEqual(data["status"], "completed")
+        self.assertEqual(data["retrigger_task_id"], "retrigger-task-789")
+        self.assertNotIn("results", data)
+
+        mock_async_result.assert_called_once_with("test-task-456")
+
+    @patch("webscraper.views.AsyncResult")
+    def test_api_task_status_pending(self, mock_async_result):
+        mock_task = Mock()
+        mock_task.ready.return_value = False
+        mock_async_result.return_value = mock_task
+
+        url = reverse("api_task_status", kwargs={"task_id": "pending-task-999"})
+        response = self.client.get(url)
+
+        self.assertEqual(response.status_code, OK)
+
+        data = response.json()
+        self.assertEqual(data["status"], "pending")
+        self.assertNotIn("results", data)
+        self.assertNotIn("retrigger_task_id", data)
+
+        mock_async_result.assert_called_once_with("pending-task-999")
+
+    @patch("webscraper.views.AsyncResult")
+    def test_api_task_status_completed_empty_results(self, mock_async_result):
+        mock_task = Mock()
+        mock_task.ready.return_value = True
+        mock_task.result = {
+            "results": []
+        }
+        mock_async_result.return_value = mock_task
+
+        url = reverse("api_task_status", kwargs={"task_id": "empty-task-111"})
+        response = self.client.get(url)
+
+        self.assertEqual(response.status_code, OK)
+
+        data = response.json()
+        self.assertEqual(data["status"], "completed")
+        self.assertEqual(data["results"], [])
+
+        mock_async_result.assert_called_once_with("empty-task-111")

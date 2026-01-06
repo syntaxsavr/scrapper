@@ -30,7 +30,6 @@ def api_task_status(_, task_id):
         response = {"status": "completed"}
 
         if "results" in result:
-            response["count"] = result["count"]
             response["results"] = result["results"]
 
         if "retrigger_task_id" in result:

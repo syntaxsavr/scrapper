@@ -31,7 +31,6 @@ def search_datasets(query):
     results_with_scores = _perform_search_with_scoring(query)
 
     return {
-        "count": len(results_with_scores),
         "results": results_with_scores
     }
 
