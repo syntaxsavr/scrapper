@@ -33,9 +33,11 @@ class KaggleScraperSelenium:
         # wait for JS to render the dataset lists (or none if the query has no results)
         wait = WebDriverWait(self.driver, 2)
         try:
-            wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, "div > ul > li")))
+            wait.until(
+                EC.visibility_of_element_located((By.CSS_SELECTOR, "div > ul > li"))
+            )
         except TimeoutException:
-            return None # abort-no data
+            return None  # abort-no data
         return self.driver.page_source
 
     def parse_datasets(self, html: str, results: list):
@@ -104,10 +106,10 @@ class KaggleScraperSelenium:
                 # fewer than 3 <li> → no next button
                 return False
             # use pages as sanity check
-            if (len(li_items)-2) != pages:
+            if (len(li_items) - 2) != pages:
                 return False
             # last <li> = next button
-            next_li = li_items[len(li_items)-1]
+            next_li = li_items[len(li_items) - 1]
             next_btn = next_li.find_element(By.TAG_NAME, "button")
             # check if disabled
             if next_btn.get_attribute("disabled") is not None:
@@ -119,8 +121,9 @@ class KaggleScraperSelenium:
 
             time.sleep(0.4)
             wait = WebDriverWait(self.driver, 2)
-            wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, "div > ul > li")))
-            print("so far so good")
+            wait.until(
+                EC.visibility_of_element_located((By.CSS_SELECTOR, "div > ul > li"))
+            )
             return True
 
         except Exception:
@@ -137,32 +140,23 @@ class KaggleScraperSelenium:
         for _i in range(pages):
             self.parse_datasets(html, results)
             # we may be too fast for the button
-            if(self.click_next_button(pages) is False):
+            if self.click_next_button(pages) is False:
                 break
             html = self.driver.page_source
-            
+
         return results
 
     def close(self):
         self.driver.quit()
 
-
-# Usage example
+# this is as of now for local testing only/ only runs locally
 # if __name__ == "__main__":
 #     scraper = KaggleScraperSelenium()
-#     results = scraper.scrape("house")
-#     print("Datasets found:", results)
-#     scraper.close()
-
-# this is as of now for local testing only/ only runs locally
-if __name__ == "__main__":
-    scraper = KaggleScraperSelenium()
-    try:
-        results = scraper.scrape("car")
-        print("\nDatasets found:")
-        for idx, title in enumerate(results, 1):
-            print(f"{idx}. {title}")
-        print(f"\nTotal datasets: {len(results)}")
-    finally:
-        
-        scraper.close()
+#     try:
+#         results = scraper.scrape("car")
+#         print("\nDatasets found:")
+#         for idx, title in enumerate(results, 1):
+#             print(f"{idx}. {title}")
+#         print(f"\nTotal datasets: {len(results)}")
+#     finally:
+#         scraper.close()
