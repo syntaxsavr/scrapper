@@ -22,9 +22,8 @@ def api_search(request):
         "task_ids": [local_task.id, hf_task.id]
     })
 
-def api_task_status(_request, task_id):
+def api_task_status(_, task_id):
     task = AsyncResult(task_id)
-    _ = _request
 
     if task.ready():
         result = task.result
@@ -86,23 +85,3 @@ def detailed_view(request, id):
         "dataset": dataset
     }
     return render(request, "detailed_view.html", context)
-
-def api_task_status(_, task_id):
-    task = AsyncResult(task_id)
-
-    if task.ready():
-        result = task.result
-
-        results = Dataset.objects.filter(
-            id__in=[r["id"] for r in result["results"]]
-        )
-
-        return JsonResponse({
-            "status": "completed",
-            "count": result["count"],
-            "results": list(results.values("id", "title", "description")),
-        })
-    else:
-        return JsonResponse({
-            "status": "pending",
-        })
