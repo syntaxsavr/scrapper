@@ -12,4 +12,4 @@ mutants/
 report.html
 cosmic-ray.sqlite
 .coverage
-
+celerybeat-schedule

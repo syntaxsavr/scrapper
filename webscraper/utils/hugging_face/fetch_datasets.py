@@ -7,12 +7,11 @@ def fetch_huggingface_datasets(query: str, limit: int = 50):
 
     for dataset in datasets:
         title = dataset.id
-        description = (
-            dataset.card_data.get("description")
-            if dataset.card_data and "description" in dataset.card_data
-            else "no description"
-        )
+        description = ""
 
+        if dataset.card_data:
+            description = dataset.card_data.get("description", "") or ""
+       
         results.append({
             "title": title,
             "description": description
