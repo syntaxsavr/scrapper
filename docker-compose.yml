@@ -1,17 +1,17 @@
 services:
   db:
     image: postgres:15
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
     environment:
-      POSTGRES_DB: scrapper_db
-      POSTGRES_USER: scrapper_user
-      POSTGRES_PASSWORD: password123
+      - POSTGRES_DB=${POSTGRES_DB:-scrapper_db}
+      - POSTGRES_USER=${POSTGRES_USER:-scrapper_user}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-password123}
     ports:
       - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U scrapper_user -d scrapper_db"]  # Added -d flag
-      interval: 5s
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-scrapper_user} -d ${POSTGRES_DB:-scrapper_db}"]
+      interval: 10s
       timeout: 5s
       retries: 5
 
@@ -19,26 +19,57 @@ services:
     image: redis:alpine
     ports:
       - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   web:
-    image: s1ziegler/crapper:dev
-    environment:
-      ENVIRONMENT: development
-      SECRET_KEY: django-insecure-showcase-key
-      DEBUG: "True"
-      ALLOWED_HOSTS: localhost,127.0.0.1
-      DB_HOST: db
-      DB_PORT: 5432
-      DB_NAME: scrapper_db
-      DB_USER: scrapper_user
-      DB_PASSWORD: password123
-      CELERY_BROKER_URL: redis://redis:6379/0
-      CELERY_RESULT_BACKEND: redis://redis:6379/0
-      SENTRY_DSN: ""
+    build:
+      context: .
+      args:
+        ENVIRONMENT: ${ENVIRONMENT:-development}
+    command: > # Normally makemigrations should not be called here, but we are doing it anyway since I do not want any team member to run into setup issues due to forgetting to call them.
+      sh -c "python manage.py makemigrations &&
+            python manage.py migrate &&
+            python manage.py runserver 0.0.0.0:8000"
+    volumes:
+      - .:/app
     ports:
       - "8000:8000"
+    env_file:
+      - .env
     depends_on:
       db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  celery:
+    build: .
+    command: celery -A scraper_project worker --loglevel=warning --queues=celery --concurrency=4
+    volumes:
+      - .:/app
+    env_file:
+      - .env
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  celery-beat:
+    build: .
+    command: celery -A scraper_project beat --loglevel=warning
+    volumes:
+      - .:/app
+    env_file:
+      - .env
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
         condition: service_healthy
 
 volumes:

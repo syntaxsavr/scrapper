@@ -1,5 +1,5 @@
 from celery import shared_task
-from scrapers.hugging_face.scraper_hugging_face import fetch_huggingface_datasets
+from .utils.hugging_face.fetch_datasets import fetch_huggingface_datasets
 from .models import Log, Dataset
 import time
 
