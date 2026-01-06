@@ -33,7 +33,7 @@ class ScraperKaggleTests(TestCase):
 
 
     def test_parse1(self):
-         with open("webscraper\\tests\\kaggle_test1.html", encoding="utf-8") as file:
+         with open("webscraper/tests/kaggle_test1.html", encoding="utf-8") as file:
             results=[]
             self.scraper.parse_datasets(file.read(),results)
             file.close()
@@ -49,7 +49,7 @@ class ScraperKaggleTests(TestCase):
             self.assertEqual(results[19]["date"], "Wed Dec 31 2025 19:28:39 GMT+0100 (Central European Standard Time)")
 
     def test_parse2(self):
-         with open("webscraper\\tests\\kaggle_test2.html", encoding="utf-8") as file:
+         with open("webscraper/tests/kaggle_test2.html", encoding="utf-8") as file:
             results=[]
             self.scraper.parse_datasets(file.read(),results)
             file.close()
@@ -60,19 +60,19 @@ class ScraperKaggleTests(TestCase):
             self.assertEqual(results[14]["date"], "Mon Dec 08 2025 12:52:39 GMT+0100 (Central European Standard Time)")
 
     def test_parse_pages1(self):
-         with open("webscraper\\tests\\kaggle_test1.html", encoding="utf-8") as file:
+         with open("webscraper/tests/kaggle_test1.html", encoding="utf-8") as file:
             length = self.scraper.parse_num_of_pages(file.read())
             file.close()
             self.assertEqual(length, 10)
     
     def test_parse_pages2(self):
-         with open("webscraper\\tests\\kaggle_test2.html", encoding="utf-8") as file:
+         with open("webscraper/tests/kaggle_test2.html", encoding="utf-8") as file:
             length = self.scraper.parse_num_of_pages(file.read())
             file.close()
             self.assertEqual(length, 1)
 
     def test_scrape1(self):
-         with open("webscraper\\tests\\kaggle_test1.html", encoding="utf-8") as file:
+         with open("webscraper/tests/kaggle_test1.html", encoding="utf-8") as file:
             results = []
             html = file.read()
             file.close()
@@ -94,7 +94,7 @@ class ScraperKaggleTests(TestCase):
             self.assertEqual(len(results), 200)
 
     def test_scrape2(self):
-         with open("webscraper\\tests\\kaggle_test2.html", encoding="utf-8") as file:
+         with open("webscraper/tests/kaggle_test2.html", encoding="utf-8") as file:
             results = []
             html = file.read()
             file.close()
