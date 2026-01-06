@@ -36,6 +36,8 @@ class ScrapHuggingfaceDatasetsTests(TestCase):
         self.assertEqual(Dataset.objects.count(), 2)
         existing = Dataset.objects.get(title="existing_dataset")
         self.assertEqual(existing.description, "old description")
+
+    @patch('webscraper.tasks.search_datasets.delay')
     @patch('webscraper.tasks.fetch_huggingface_datasets')
     def test_calls_fetch_with_correct_parameters(self, mock_fetch, mock_search_delay):
         mock_fetch.return_value = []
