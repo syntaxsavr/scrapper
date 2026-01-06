@@ -8,6 +8,8 @@ Procfile
 stop_all.bat
 .idea/
 .vscode/
-celerybeat-schedule
-session.sqlite
+mutants/
+report.html
+cosmic-ray.sqlite
 .coverage
+celerybeat-schedule
