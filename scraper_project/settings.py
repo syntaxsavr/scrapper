@@ -5,15 +5,6 @@ from sentry_sdk.integrations.django import DjangoIntegration
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# ENVIRONMENT DETECTION (loads .env.ENVIRONMENT or .env)
-env_file = f".env.{os.getenv('ENVIRONMENT', 'development')}"
-if os.path.exists(env_file):
-    for line in open(env_file):
-        if line.strip() and not line.startswith('#'):
-            key, value = line.strip().split('=', 1)
-            os.environ[key] = value
-
-# SMART DEFAULTS (if no .env loaded)
 ENVIRONMENT = os.getenv('ENVIRONMENT', 'development')
 SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-default-key-change-me')
 DEBUG = os.getenv('DEBUG', 'True').lower() == 'true'
@@ -51,7 +42,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-ROOT_URLCONF = 'scrapper_project.urls'
+ROOT_URLCONF = 'scraper_project.urls'
 
 TEMPLATES = [
     {
@@ -69,7 +60,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'scrapper_project.wsgi.application'
+WSGI_APPLICATION = 'scraper_project.wsgi.application'
 
 # POSTGRESQL - Smart defaults
 DB_NAME = os.getenv('DB_NAME', 'scrapper_db')
@@ -89,9 +80,21 @@ DATABASES = {
     }
 }
 
-# Celery - Smart defaults
-CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL', 'redis://localhost:6379/0')
-CELERY_RESULT_BACKEND = os.getenv('CELERY_RESULT_BACKEND', 'redis://localhost:6379/0')
+# Celery Configuration
+CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL', 'redis://redis:6379/0')
+CELERY_RESULT_BACKEND = os.getenv('CELERY_RESULT_BACKEND', 'redis://redis:6379/0')
+CELERY_ACCEPT_CONTENT = ['application/json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = 'Europe/Vienna'
+
+# Redis Cache Configuration
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+        'LOCATION': os.getenv('REDIS_CACHE_URL', 'redis://redis:6379/1'),
+    }
+}
 
 # Austrian Settings
 LANGUAGE_CODE = 'de-at'
