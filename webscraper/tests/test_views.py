@@ -5,7 +5,6 @@ from webscraper.tests.constants import OK, REDIRECT, NOT_FOUND, BAD_REQUEST
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import UserCreationForm
 from unittest.mock import patch, Mock
-from celery.result import AsyncResult
 
 class ViewTests(TestCase):
     def test_home_view_renders(self):
