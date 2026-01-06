@@ -59,6 +59,19 @@ services:
       redis:
         condition: service_healthy
 
+  celery-search:
+    build: .
+    command: celery -A scraper_project worker --loglevel=warning --queues=search --concurrency=4
+    volumes:
+      - .:/app
+    env_file:
+      - .env
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
   celery-beat:
     build: .
     command: celery -A scraper_project beat --loglevel=warning
