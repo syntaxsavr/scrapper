@@ -9,3 +9,4 @@ stop_all.bat
 .idea/
 .vscode/
 celerybeat-schedule
+db.sqlite3

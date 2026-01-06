@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="navbar">
+    <div class="nav-left">
+        <h2><a href="{% url 'home' %}">Web Scraper</a></h2>
+    </div>
+    <div class="nav-right">
+        {% if user.is_authenticated %}
+            <div class="profile-dropdown">
+                <button class="profile-button" id="profileButton">
+                    <div class="profile-avatar">
+                        <div class="avatar-placeholder">
+                            <i class="fas fa-user"></i>
+                        </div>
+                    </div>
+                    <span class="profile-name">{{ user.username }}</span>
+                    <i class="fas fa-chevron-down dropdown-arrow"></i>
+                </button>
+                
+                <div class="dropdown-menu" id="profileDropdown">
+                    <div class="dropdown-header">
+                        <div class="user-info">
+                            <strong>{{ user.username }}</strong>
+                            <small>@{{ user.username }}</small>
+                        </div>
+                    </div>
+                    <div class="dropdown-divider"></div>
+                    <a href="{% url 'profile' %}" class="dropdown-item">
+                        <i class="fas fa-user"></i> My Profile
+                    </a>
+                    <a href="{% url 'payment_methods' %}" class="dropdown-item">
+                        <i class="fas fa-credit-card"></i> Payment Methods
+                    </a>
+                    <div class="dropdown-divider"></div>
+                    <form method="post" action="{% url 'logout' %}" class="dropdown-form">
+                        {% csrf_token %}
+                        <button type="submit" class="dropdown-item logout-item">
+                            <i class="fas fa-sign-out-alt"></i> Logout
+                        </button>
+                    </form>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="container">
+    <div class="profile-header">
+        <div class="profile-info">
+            <h1>Add Payment Method</h1>
+            <p>Add a new credit or debit card to your account</p>
+        </div>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="profile-section">
+        <form method="post" class="payment-form">
+            {% csrf_token %}
+            
+            <div class="form-group">
+                <label for="{{ form.card_type.id_for_label }}">Card Type:</label>
+                {{ form.card_type }}
+                {% if form.card_type.errors %}
+                    <ul class="errorlist">
+                        {% for error in form.card_type.errors %}
+                            <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.last_four_digits.id_for_label }}">Last Four Digits:</label>
+                {{ form.last_four_digits }}
+                {% if form.last_four_digits.errors %}
+                    <ul class="errorlist">
+                        {% for error in form.last_four_digits.errors %}
+                            <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="{{ form.expiry_month.id_for_label }}">Expiry Month:</label>
+                    {{ form.expiry_month }}
+                    {% if form.expiry_month.errors %}
+                        <ul class="errorlist">
+                            {% for error in form.expiry_month.errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label for="{{ form.expiry_year.id_for_label }}">Expiry Year:</label>
+                    {{ form.expiry_year }}
+                    {% if form.expiry_year.errors %}
+                        <ul class="errorlist">
+                            {% for error in form.expiry_year.errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.is_primary.id_for_label }}">{{ form.is_primary }} Make this my primary payment method</label>
+                {% if form.is_primary.errors %}
+                    <ul class="errorlist">
+                        {% for error in form.is_primary.errors %}
+                            <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-success">Add Payment Method</button>
+                <a href="{% url 'payment_methods' %}" class="btn btn-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
