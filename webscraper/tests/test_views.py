@@ -46,7 +46,7 @@ class ViewTests(TestCase):
         self.assertEqual(response.status_code, 404)
 
     def test_detailed_view_displays_dataset_fields(self):
-        dataset = Dataset.objects.create(title="SQuAD", description="no description")
+        dataset = Dataset.objects.create(title="SQuAD", description="")
 
         url = reverse("detailed_view", kwargs={"id": dataset.id})
         response = self.client.get(url)
