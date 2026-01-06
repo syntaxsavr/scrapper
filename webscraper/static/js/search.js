@@ -19,7 +19,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         resultsContainer.innerHTML =
-            '<div class="content"><h2>Searching for "' + query + '"...</h2></div>';
+            '<div class="content"><h2>Searching for "' + escapeHtml(query) + '"...</h2></div>';
 
         startSearch(query);
     });
@@ -33,10 +33,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 return response.json();
             })
             .then(data => {
-                const taskId = data.task_id;
-                console.log('Search task started with ID:', taskId);
+                const taskIds = data.task_ids;
+                const primaryTaskId = taskIds[0];
+                console.log('Search tasks started:', taskIds);
 
-                pollTaskStatus(taskId, query);
+                pollMultipleTasks(taskIds, primaryTaskId, query);
             })
             .catch(error => {
                 console.error('Error starting search:', error);
@@ -47,43 +48,131 @@ document.addEventListener('DOMContentLoaded', function() {
             });
     }
 
-    function pollTaskStatus(taskId, query) {
-        const pollInterval = setInterval(function() {
-            fetch('/api/status/' + taskId + '/')
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Network response was not ok');
-                    }
-                    return response.json();
-                })
-                .then(statusData => {
-                    console.log('Task status:', statusData.status);
+    function pollMultipleTasks(taskIds, primaryTaskId, query) {
+        let primaryComplete = false;
+        let scrapingTaskIds = taskIds.filter(function(id) { return id !== primaryTaskId; });
+        let retriggeredTaskIds = [];
 
-                    if (statusData.status === 'completed') {
-                        clearInterval(pollInterval);
-                        console.log('Search complete. Found', statusData.count, 'results');
+        let currentDelay = 500;
+        const minDelay = 500;
+        const maxDelay = 8000;
+        const backoffMultiplier = 1.5;
 
-                        displayResults(query, statusData);
-                    } else if (statusData.status === 'pending') {
-                        resultsContainer.innerHTML =
-                            '<div class="content">' +
-                            '<h2>Searching...</h2>' +
-                            '</div>';
-                    }
-                })
-                .catch(error => {
-                    console.error('Error checking status:', error);
-                    clearInterval(pollInterval);
-                    resultsContainer.innerHTML =
-                        '<div class="content">' +
-                        '<p class="error">Error checking search status.</p>' +
-                        '</div>';
-                });
-        }, 1000);
+        function resetDelay() {
+            currentDelay = minDelay;
+        }
+
+        function increaseDelay() {
+            currentDelay = Math.min(currentDelay * backoffMultiplier, maxDelay);
+        }
+
+        async function pollTasks() {
+            const fetchPromises = [];
+            const completedScrapingTaskIds = [];
+            const completedRetriggerTaskIds = [];
+            const newRetriggerTaskIds = [];
+
+            if (!primaryComplete) {
+                const primaryPromise = fetch('/api/status/' + primaryTaskId + '/')
+                    .then(response => response.json())
+                    .then(statusData => {
+                        if (statusData.status === 'completed') {
+                            primaryComplete = true;
+                            console.log('Primary search complete. Found', statusData.results.length, 'results');
+                            displayResults(query, statusData);
+                            return { completed: true };
+                        } else {
+                            resultsContainer.innerHTML =
+                                '<div class="content"><h2>Searching...</h2></div>';
+                            return { completed: false };
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error checking primary task:', error);
+                        return { completed: false };
+                    });
+                fetchPromises.push(primaryPromise);
+            }
+
+            scrapingTaskIds.forEach(function(taskId) {
+                const scrapingPromise = fetch('/api/status/' + taskId + '/')
+                    .then(response => response.json())
+                    .then(statusData => {
+                        if (statusData.status === 'completed') {
+                            completedScrapingTaskIds.push(taskId);
+
+                            if (statusData.retrigger_task_id) {
+                                console.log('Scraping complete. New retrigger task:', statusData.retrigger_task_id);
+                                newRetriggerTaskIds.push(statusData.retrigger_task_id);
+                            }
+                            return { completed: true };
+                        }
+                        return { completed: false };
+                    })
+                    .catch(error => {
+                        console.error('Error checking scraping task:', error);
+                        return { completed: false };
+                    });
+                fetchPromises.push(scrapingPromise);
+            });
+
+            retriggeredTaskIds.forEach(function(retriggerTaskId) {
+                const retriggerPromise = fetch('/api/status/' + retriggerTaskId + '/')
+                    .then(response => response.json())
+                    .then(statusData => {
+                        if (statusData.status === 'completed' && statusData.results) {
+                            console.log('Retrigger complete. Updated results:', statusData.results.length);
+                            displayResults(query, statusData);
+                            completedRetriggerTaskIds.push(retriggerTaskId);
+                            return { completed: true };
+                        }
+                        return { completed: false };
+                    })
+                    .catch(error => {
+                        console.error('Error checking retrigger task:', error);
+                        return { completed: false };
+                    });
+                fetchPromises.push(retriggerPromise);
+            });
+
+            const results = await Promise.all(fetchPromises);
+
+            scrapingTaskIds = scrapingTaskIds.filter(function(id) {
+                return completedScrapingTaskIds.indexOf(id) === -1;
+            });
+
+            retriggeredTaskIds = retriggeredTaskIds.filter(function(id) {
+                return completedRetriggerTaskIds.indexOf(id) === -1;
+            });
+
+            newRetriggerTaskIds.forEach(function(taskId) {
+                if (retriggeredTaskIds.indexOf(taskId) === -1) {
+                    retriggeredTaskIds.push(taskId);
+                }
+            });
+
+            if (primaryComplete && scrapingTaskIds.length === 0 && retriggeredTaskIds.length === 0) {
+                console.log('All tasks complete');
+                return;
+            }
+
+            const anyTaskCompleted = results.some(function(result) { return result.completed; });
+
+            if (anyTaskCompleted) {
+                resetDelay();
+            } else {
+                increaseDelay();
+            }
+
+            console.log('Next poll in ' + currentDelay + 'ms');
+            setTimeout(pollTasks, currentDelay);
+        }
+
+        pollTasks();
     }
 
     function displayResults(query, statusData) {
-        if (statusData.count === 0) {
+        if (statusData.results.length === 0) {
             resultsContainer.innerHTML =
                 '<div class="content">' +
                 '<h2>No results found for "' + escapeHtml(query) + '"</h2>' +
@@ -91,7 +180,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 '</div>';
         } else {
             let html = '<div class="content">';
-            html += '<h2>Found ' + statusData.count + ' result(s) for "' + escapeHtml(query) + '"</h2>';
+            html += '<h2>Found ' + statusData.results.length + ' result(s) for "' + escapeHtml(query) + '"</h2>';
             html += '<div class="results-list">';
 
             statusData.results.forEach(function(result) {

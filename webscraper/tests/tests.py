@@ -1,4 +1,3 @@
-import unittest
 from django.test import TestCase
 from .testExample import add_numbers
 from .testExample import sub_numbers
