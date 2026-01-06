@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load string_filters %}
 
 {% block title %}{{ project.name }} - Scraping Dashboard{% endblock %}
 
@@ -109,8 +110,8 @@
                                         {% endif %}
                                         {% if scrape.tags %}
                                             <div class="tags">
-                                                {% for tag in scrape.tags.split:',' %}
-                                                    <span class="tag">{{ tag|trim }}</span>
+                                                {% for tag in scrape.tags|split_tags:"," %}
+                                                    <span class="tag">{{ tag }}</span>
                                                 {% endfor %}
                                             </div>
                                         {% endif %}

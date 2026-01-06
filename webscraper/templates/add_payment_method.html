@@ -1,36 +1,28 @@
 {% extends "base.html" %}
-
-{% block title %}Edit Payment Method{% endblock %}
-
 {% block content %}
+<div class="navbar">
+    <div class="nav-left">
+        <h2><a href="{% url 'home' %}">Web Scraper</a></h2>
+    </div>
+    <div class="nav-right">
+        <a href="{% url 'payment_methods' %}" class="btn btn-secondary">Back to Payment Methods</a>
+        <a href="{% url 'logout' %}" class="btn">Logout</a>
+    </div>
+</div>
+
 <div class="container">
     <div class="form-container">
         <h1>
-            <i class="fas fa-edit"></i>
-            Edit Payment Method
+            <i class="fas fa-plus-circle"></i>
+            Add Payment Method
         </h1>
         
-        <div class="current-method">
-            <div class="method-preview">
-                <div class="card-brand">
-                    {% if payment_method.card_type == 'visa' %}
-                        <i class="fab fa-cc-visa" style="color: #1a1f71;"></i>
-                    {% elif payment_method.card_type == 'mastercard' %}
-                        <i class="fab fa-cc-mastercard" style="color: #eb001b;"></i>
-                    {% elif payment_method.card_type == 'amex' %}
-                        <i class="fab fa-cc-amex" style="color: #006fcf;"></i>
-                    {% elif payment_method.card_type == 'discover' %}
-                        <i class="fab fa-cc-discover" style="color: #ff6000;"></i>
-                    {% elif payment_method.card_type == 'paypal' %}
-                        <i class="fab fa-cc-paypal" style="color: #003087;"></i>
-                    {% else %}
-                        <i class="far fa-credit-card"></i>
-                    {% endif %}
-                    <span>{{ payment_method.get_card_type_display }} •••• {{ payment_method.last_four_digits }}</span>
-                </div>
-                {% if payment_method.is_primary %}
-                    <span class="primary-badge">Primary</span>
-                {% endif %}
+        <div class="security-notice">
+            <i class="fas fa-shield-alt"></i>
+            <div>
+                <strong>Secure Payment Processing:</strong>
+                This is a mock payment system for demonstration purposes. 
+                No real financial information is processed or stored.
             </div>
         </div>
 
@@ -129,9 +121,9 @@
             </div>
 
             <div class="form-actions">
-                <button type="submit" class="btn btn-primary">
+                <button type="submit" class="btn btn-success">
                     <i class="fas fa-save"></i>
-                    Update Payment Method
+                    Add Payment Method
                 </button>
                 <a href="{% url 'payment_methods' %}" class="btn btn-secondary">
                     <i class="fas fa-times"></i>
@@ -141,4 +133,143 @@
         </form>
     </div>
 </div>
+
+<style>
+.container {
+    max-width: 800px;
+    margin: 20px auto;
+    padding: 0 20px;
+}
+
+.form-container {
+    background: var(--secondary-bg-color);
+    padding: 40px;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+}
+
+.form-container h1 {
+    color: var(--text-color);
+    margin-bottom: 30px;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+}
+
+.security-notice {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 20px;
+    background: rgba(187, 134, 252, 0.1);
+    border: 1px solid var(--primary-color);
+    border-radius: 12px;
+    margin-bottom: 30px;
+}
+
+.security-notice i {
+    color: var(--primary-color);
+    font-size: 1.5rem;
+}
+
+.security-notice div {
+    color: var(--text-color);
+}
+
+.security-notice strong {
+    color: var(--primary-color);
+}
+
+.payment-form {
+    display: grid;
+    gap: 25px;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+}
+
+.form-group label i {
+    color: #aaa;
+}
+
+.form-text {
+    color: #aaa;
+    font-size: 0.9rem;
+    margin-top: 5px;
+}
+
+.checkbox-group {
+    background: var(--primary-bg-color);
+    padding: 20px;
+    border-radius: 8px;
+    border: 1px solid #333;
+}
+
+.checkbox-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+}
+
+.checkbox-label {
+    margin: 0 !important;
+    font-weight: 500 !important;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text-color) !important;
+}
+
+.checkbox-label i {
+    color: #ffc107;
+}
+
+input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+}
+
+.form-actions {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    margin-top: 30px;
+}
+
+.error {
+    color: #ff6b6b;
+    font-size: 0.9rem;
+    margin-top: 5px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.error::before {
+    content: "⚠️";
+    font-size: 0.8rem;
+}
+
+@media (max-width: 768px) {
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+    
+    .form-actions {
+        flex-direction: column;
+    }
+    
+    .form-container {
+        padding: 20px;
+    }
+}
+</style>
 {% endblock %}

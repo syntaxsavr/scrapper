@@ -7,6 +7,7 @@ from django.utils import timezone
 def search_datasets(query, user_scrape_id=None):
     """Search existing datasets and optionally update user scrape record"""
     from django.db.models import Q
+    import traceback
     
     start_time = timezone.now()  # track timing
     
@@ -20,43 +21,65 @@ def search_datasets(query, user_scrape_id=None):
         except UserScrape.DoesNotExist:
             pass  # scrape record not found, continue anyway
     
-    # perform the search
-    results = Dataset.objects.filter(
-        Q(title__icontains=query) | Q(description__icontains=query)
-    )
+    try:
+        # perform the search
+        results = Dataset.objects.filter(
+            Q(title__icontains=query) | Q(description__icontains=query)
+        )
 
-    count = results.count()
-    results_data = list(results.values("id", "title", "description"))
-    
-    # update scrape record with results if we have one
-    if user_scrape_id:
-        try:
-            scrape = UserScrape.objects.get(id=user_scrape_id)
-            scrape.status = 'completed'  # mark as completed
-            scrape.results_count = count
-            scrape.results_data = {'results': results_data}  # store results
-            scrape.completed_at = timezone.now()
-            scrape.duration_seconds = (timezone.now() - start_time).total_seconds()
-            scrape.save()
-            
-            # create ScrapedDataItem records for each result
-            from .models import ScrapedDataItem
-            for result in results_data:
-                ScrapedDataItem.objects.create(
-                    scrape=scrape,
-                    title=result['title'],
-                    description=result['description'],
-                    url=f"/detailed_view/{result['id']}/",  # link to detail view
-                )
+        count = results.count()
+        results_data = list(results.values("id", "title", "description"))
+        
+        # update scrape record with results if we have one
+        if user_scrape_id:
+            try:
+                scrape = UserScrape.objects.get(id=user_scrape_id)
+                scrape.status = 'completed'  # mark as completed
+                scrape.results_count = count
+                scrape.results_data = {'results': results_data}  # store results
+                scrape.completed_at = timezone.now()
+                scrape.duration_seconds = (timezone.now() - start_time).total_seconds()
+                scrape.save()
                 
-        except UserScrape.DoesNotExist:
-            pass
+                # create ScrapedDataItem records for each result
+                from .models import ScrapedDataItem
+                for result in results_data:
+                    ScrapedDataItem.objects.create(
+                        scrape=scrape,
+                        title=result['title'],
+                        description=result['description'],
+                        url=f"/detailed_view/{result['id']}/",  # link to detail view
+                    )
+                    
+            except UserScrape.DoesNotExist:
+                pass
 
-    return {
-        "query": query,
-        "count": count,
-        "results": results_data
-    }
+        return {
+            "query": query,
+            "count": count,
+            "results": results_data
+        }
+    
+    except Exception as e:
+        # handle any errors that occur during scraping
+        error_message = f"Search failed: {str(e)}"
+        print(f"Error in search_datasets: {error_message}")
+        print(traceback.format_exc())
+        
+        # update scrape record to failed status
+        if user_scrape_id:
+            try:
+                scrape = UserScrape.objects.get(id=user_scrape_id)
+                scrape.status = 'failed'  # mark as failed instead of leaving pending
+                scrape.error_message = error_message
+                scrape.completed_at = timezone.now()
+                scrape.duration_seconds = (timezone.now() - start_time).total_seconds()
+                scrape.save()
+            except UserScrape.DoesNotExist:
+                pass
+        
+        # re-raise the exception so celery knows it failed
+        raise
 
 @shared_task
 def run_hugging_face_search_task(query: str, limit: int = 50, user_scrape_id=None):

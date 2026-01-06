@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load string_filters %}
 
 {% block title %}{{ scrape.search_query }} - Scrape Details{% endblock %}
 
@@ -116,8 +117,8 @@
                         <div class="info-card">
                             <h6><i class="fas fa-tags"></i> Tags</h6>
                             <div class="tags">
-                                {% for tag in scrape.tags.split:',' %}
-                                    <span class="tag">{{ tag|trim }}</span>
+                                {% for tag in scrape.tags|split_tags:"," %}
+                                    <span class="tag">{{ tag }}</span>
                                 {% endfor %}
                             </div>
                         </div>
@@ -174,8 +175,8 @@
                                     <span><i class="fas fa-calendar"></i> {{ item.created_at|date:"M j, Y g:i A" }}</span>
                                     {% if item.tags %}
                                         <div class="tags">
-                                            {% for tag in item.tags.split:',' %}
-                                                <span class="tag">{{ tag|trim }}</span>
+                                            {% for tag in item.tags|split_tags:"," %}
+                                                <span class="tag">{{ tag }}</span>
                                             {% endfor %}
                                         </div>
                                     {% endif %}

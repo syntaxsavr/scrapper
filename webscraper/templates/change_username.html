@@ -1,0 +1,430 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="navbar">
+    <div class="nav-left">
+        <h2><a href="{% url 'home' %}">Web Scraper</a></h2>
+    </div>
+    <div class="nav-right">
+        <a href="{% url 'profile' %}" class="btn btn-secondary">Back to Profile</a>
+        <a href="{% url 'logout' %}" class="btn">Logout</a>
+    </div>
+</div>
+
+<div class="container">
+    <div class="form-container">
+        <h1>
+            <i class="fas fa-user-edit"></i>
+            Change Username
+        </h1>
+        
+        <div class="current-username">
+            <div class="username-display">
+                <i class="fas fa-user"></i>
+                <span>Current Username: <strong>{{ user.username }}</strong></span>
+            </div>
+        </div>
+
+        <div class="username-rules">
+            <h3><i class="fas fa-info-circle"></i> Username Rules</h3>
+            <ul>
+                <li>You can only change your username every 6 months</li>
+                <li>Username must be unique</li>
+                <li>Choose carefully as you'll need to wait before changing again</li>
+            </ul>
+        </div>
+
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+
+        <form method="post" class="username-form">
+            {% csrf_token %}
+            
+            <div class="form-group">
+                <label for="{{ form.new_username.id_for_label }}">
+                    <i class="fas fa-at"></i>
+                    {{ form.new_username.label }}
+                </label>
+                {{ form.new_username }}
+                {% if form.new_username.errors %}
+                    <div class="error">{{ form.new_username.errors }}</div>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.confirm_username.id_for_label }}">
+                    <i class="fas fa-check"></i>
+                    {{ form.confirm_username.label }}
+                </label>
+                {{ form.confirm_username }}
+                {% if form.confirm_username.errors %}
+                    <div class="error">{{ form.confirm_username.errors }}</div>
+                {% endif %}
+            </div>
+
+            {% if form.non_field_errors %}
+                <div class="error">{{ form.non_field_errors }}</div>
+            {% endif %}
+
+            <div class="warning-box">
+                <i class="fas fa-exclamation-triangle"></i>
+                <div>
+                    <strong>Important:</strong> After changing your username, you won't be able to change it again for 6 months. 
+                    Make sure you're happy with your choice!
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-warning">
+                    <i class="fas fa-save"></i>
+                    Change Username
+                </button>
+                <a href="{% url 'profile' %}" class="btn btn-secondary">
+                    <i class="fas fa-times"></i>
+                    Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+.container {
+    max-width: 700px;
+    margin: 20px auto;
+    padding: 0 20px;
+}
+
+.form-container {
+    background: var(--secondary-bg-color);
+    padding: 40px;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+}
+
+.form-container h1 {
+    color: var(--text-color);
+    margin-bottom: 30px;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+}
+
+.current-username {
+    background: var(--primary-bg-color);
+    padding: 20px;
+    border-radius: 12px;
+    margin-bottom: 25px;
+    border: 1px solid #333;
+}
+
+.username-display {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 1.1rem;
+    color: var(--text-color);
+}
+
+.username-display i {
+    color: var(--primary-color);
+    font-size: 1.3rem;
+}
+
+.username-display strong {
+    color: var(--primary-color);
+}
+
+.username-rules {
+    background: rgba(187, 134, 252, 0.1);
+    padding: 20px;
+    border-radius: 12px;
+    margin-bottom: 30px;
+    border: 1px solid var(--primary-color);
+}
+
+.username-rules h3 {
+    color: var(--primary-color);
+    margin: 0 0 15px 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1.1rem;
+}
+
+.username-rules ul {
+    margin: 0;
+    padding-left: 20px;
+    color: var(--text-color);
+}
+
+.username-rules li {
+    margin-bottom: 8px;
+    line-height: 1.5;
+}
+
+.username-form {
+    display: grid;
+    gap: 25px;
+}
+
+.form-group label i {
+    color: #aaa;
+}
+
+.warning-box {
+    display: flex;
+    align-items: flex-start;
+    gap: 15px;
+    padding: 20px;
+    background: rgba(255, 193, 7, 0.1);
+    border: 1px solid #ffc107;
+    border-radius: 12px;
+    margin-bottom: 10px;
+}
+
+.warning-box i {
+    color: #ffc107;
+    font-size: 1.3rem;
+    margin-top: 2px;
+}
+
+.warning-box div {
+    color: var(--text-color);
+    line-height: 1.5;
+}
+
+.warning-box strong {
+    color: #ffc107;
+}
+
+.form-actions {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    margin-top: 20px;
+}
+
+.error {
+    color: #ff6b6b;
+    font-size: 0.9rem;
+    margin-top: 5px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.error::before {
+    content: "⚠️";
+    font-size: 0.8rem;
+}
+
+@media (max-width: 768px) {
+    .form-actions {
+        flex-direction: column;
+    }
+    
+    .form-container {
+        padding: 20px;
+    }
+    
+    .username-display {
+        flex-direction: column;
+        text-align: center;
+        gap: 8px;
+    }
+}
+</style>
+{% endblock %}
+            </div>
+        </div>
+
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+
+        <div class="current-username">
+            <p><strong>Current Username:</strong> {{ user.username }}</p>
+        </div>
+
+        <form method="post" class="username-form">
+            {% csrf_token %}
+            
+            <div class="form-group">
+                <label for="{{ form.new_username.id_for_label }}">{{ form.new_username.label }}</label>
+                {{ form.new_username }}
+                {% if form.new_username.errors %}
+                    <div class="error">{{ form.new_username.errors }}</div>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.confirm_username.id_for_label }}">{{ form.confirm_username.label }}</label>
+                {{ form.confirm_username }}
+                {% if form.confirm_username.errors %}
+                    <div class="error">{{ form.confirm_username.errors }}</div>
+                {% endif %}
+            </div>
+
+            {% if form.non_field_errors %}
+                <div class="error">{{ form.non_field_errors }}</div>
+            {% endif %}
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-warning">Change Username</button>
+                <a href="{% url 'profile' %}" class="btn btn-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+.container {
+    max-width: 600px;
+    margin: 20px auto;
+    padding: 0 20px;
+}
+
+.form-container {
+    background: white;
+    padding: 40px;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.form-container h1 {
+    color: #2c3e50;
+    margin-bottom: 30px;
+    text-align: center;
+}
+
+.warning-box {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 20px;
+    background: #fff3cd;
+    border: 1px solid #ffeaa7;
+    border-radius: 8px;
+    margin-bottom: 30px;
+}
+
+.warning-box i {
+    color: #856404;
+    font-size: 1.5rem;
+}
+
+.warning-box div {
+    color: #856404;
+}
+
+.current-username {
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    margin-bottom: 30px;
+    text-align: center;
+}
+
+.current-username p {
+    margin: 0;
+    font-size: 1.1rem;
+    color: #495057;
+}
+
+.username-form {
+    display: grid;
+    gap: 25px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.form-group label {
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: #2c3e50;
+}
+
+.form-control {
+    padding: 12px 16px;
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: border-color 0.2s;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: #ffc107;
+    box-shadow: 0 0 0 3px rgba(255,193,7,0.1);
+}
+
+.form-actions {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    margin-top: 30px;
+}
+
+.error {
+    color: #dc3545;
+    font-size: 0.9rem;
+    margin-top: 5px;
+}
+
+.alert {
+    padding: 12px 16px;
+    margin-bottom: 20px;
+    border-radius: 8px;
+}
+
+.alert-success {
+    background-color: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.alert-error {
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+.btn {
+    display: inline-block;
+    padding: 12px 24px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 500;
+    text-align: center;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 1rem;
+}
+
+.btn-warning {
+    background: #ffc107;
+    color: #212529;
+}
+
+.btn-secondary {
+    background: #6c757d;
+    color: white;
+}
+
+.btn:hover {
+    opacity: 0.9;
+    transform: translateY(-1px);
+}
+</style>
+{% endblock %}
