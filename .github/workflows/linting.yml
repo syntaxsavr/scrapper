@@ -12,27 +12,11 @@ on:
   workflow_dispatch:    # Allows manual trigger via the GitHub UI
 
 jobs:
-  build-and-push:
+  lint:
     runs-on: ubuntu-latest
 
     strategy:
       max-parallel: 4
-
-    # Defaults (change later)
-    services:
-      db:
-        image: postgres
-        env:
-          POSTGRES_DB: scrapper_db
-          POSTGRES_USER: scrapper_user
-          POSTGRES_PASSWORD: password123
-        ports:
-          - 5432:5432
-
-      redis:
-        image: redis:7
-        ports:
-          - 6379:6379
 
     steps:
     # 1. Checkout repo
