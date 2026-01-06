@@ -63,7 +63,17 @@ document.addEventListener('DOMContentLoaded', function() {
                         clearInterval(pollInterval);
                         console.log('Search complete. Found', statusData.count, 'results');
 
-                        displayResults(query, statusData);
+                        displayResults(statusData.results, statusData.count, query);
+                    } else if (statusData.status === 'failed') {
+                        clearInterval(pollInterval);
+                        console.error('Search failed:', statusData.error);
+                        resultsContainer.innerHTML =
+                            '<div class="content">' +
+                            '<h2>Search Failed</h2>' +
+                            '<p class="error">An error occurred during the search: ' + 
+                            (statusData.error || 'Unknown error') + '</p>' +
+                            '<button onclick="window.location.reload()" class="btn btn-primary">Try Again</button>' +
+                            '</div>';
                     } else if (statusData.status === 'pending') {
                         resultsContainer.innerHTML =
                             '<div class="content">' +
@@ -82,8 +92,8 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 1000);
     }
 
-    function displayResults(query, statusData) {
-        if (statusData.count === 0) {
+    function displayResults(results, count, query) {
+        if (count === 0) {
             resultsContainer.innerHTML =
                 '<div class="content">' +
                 '<h2>No results found for "' + escapeHtml(query) + '"</h2>' +
@@ -91,10 +101,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 '</div>';
         } else {
             let html = '<div class="content">';
-            html += '<h2>Found ' + statusData.count + ' result(s) for "' + escapeHtml(query) + '"</h2>';
+            html += '<h2>Found ' + count + ' result(s) for "' + escapeHtml(query) + '"</h2>';
             html += '<div class="results-list">';
 
-            statusData.results.forEach(function(result) {
+            results.forEach(function(result) {
                 html += '<a href="/detailed_view/' + result.id + '/" class="result-link">';
                 html += '<div class="result-item">';
                 html += '<h3>' + escapeHtml(result.title) + '</h3>';

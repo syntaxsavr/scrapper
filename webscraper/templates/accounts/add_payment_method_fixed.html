@@ -1,8 +1,49 @@
 {% extends "base.html" %}
-
-{% block title %}Add Payment Method{% endblock %}
-
 {% block content %}
+<div class="navbar">
+    <div class="nav-left">
+        <h2><a href="{% url 'home' %}">Web Scraper</a></h2>
+    </div>
+    <div class="nav-right">
+        {% if user.is_authenticated %}
+            <div class="profile-dropdown">
+                <button class="profile-button" id="profileButton">
+                    <div class="profile-avatar">
+                        <div class="avatar-placeholder">
+                            <i class="fas fa-user"></i>
+                        </div>
+                    </div>
+                    <span class="profile-name">{{ user.username }}</span>
+                    <i class="fas fa-chevron-down dropdown-arrow"></i>
+                </button>
+                
+                <div class="dropdown-menu" id="profileDropdown">
+                    <div class="dropdown-header">
+                        <div class="user-info">
+                            <strong>{{ user.username }}</strong>
+                            <small>@{{ user.username }}</small>
+                        </div>
+                    </div>
+                    <div class="dropdown-divider"></div>
+                    <a href="{% url 'profile' %}" class="dropdown-item">
+                        <i class="fas fa-user"></i> My Profile
+                    </a>
+                    <a href="{% url 'payment_methods' %}" class="dropdown-item">
+                        <i class="fas fa-credit-card"></i> Payment Methods
+                    </a>
+                    <div class="dropdown-divider"></div>
+                    <form method="post" action="{% url 'logout' %}" class="dropdown-form">
+                        {% csrf_token %}
+                        <button type="submit" class="dropdown-item logout-item">
+                            <i class="fas fa-sign-out-alt"></i> Logout
+                        </button>
+                    </form>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
 <div class="container">
     <div class="profile-header">
         <div class="profile-info">

@@ -1,8 +1,15 @@
 {% extends "base.html" %}
-
-{% block title %}Delete Payment Method{% endblock %}
-
 {% block content %}
+<div class="navbar">
+    <div class="nav-left">
+        <h2><a href="{% url 'home' %}">Web Scraper</a></h2>
+    </div>
+    <div class="nav-right">
+        <a href="{% url 'payment_methods' %}" class="btn btn-secondary">Back to Payment Methods</a>
+        <a href="{% url 'logout' %}" class="btn">Logout</a>
+    </div>
+</div>
+
 <div class="container">
     <div class="confirmation-container">
         <div class="warning-header">
@@ -71,4 +78,179 @@
         </div>
     </div>
 </div>
+
+<style>
+.container {
+    max-width: 600px;
+    margin: 20px auto;
+    padding: 0 20px;
+}
+
+.confirmation-container {
+    background: var(--secondary-bg-color);
+    padding: 40px;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    text-align: center;
+}
+
+.warning-header {
+    margin-bottom: 30px;
+}
+
+.warning-header i {
+    font-size: 3rem;
+    color: #ffc107;
+    margin-bottom: 15px;
+    display: block;
+}
+
+.warning-header h1 {
+    color: var(--text-color);
+    margin: 0;
+    font-size: 1.8rem;
+}
+
+.payment-preview {
+    margin-bottom: 30px;
+    display: flex;
+    justify-content: center;
+}
+
+.card-display {
+    background: linear-gradient(135deg, var(--primary-color), #9a4fff);
+    padding: 25px;
+    border-radius: 16px;
+    color: white;
+    min-width: 300px;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.4);
+}
+
+.card-info {
+    text-align: left;
+}
+
+.card-brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.card-brand i {
+    font-size: 2rem;
+}
+
+.card-type {
+    font-weight: 600;
+    font-size: 1.1rem;
+}
+
+.card-number {
+    font-family: 'Courier New', monospace;
+    font-size: 1.4rem;
+    font-weight: 600;
+    margin-bottom: 20px;
+    letter-spacing: 3px;
+}
+
+.card-details {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.cardholder {
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-size: 0.9rem;
+}
+
+.expiry {
+    font-size: 0.9rem;
+}
+
+.primary-indicator {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    justify-content: center;
+}
+
+.primary-indicator i {
+    color: #ffd700;
+}
+
+.warning-message {
+    margin-bottom: 30px;
+}
+
+.warning-message h3 {
+    color: #ff6b6b;
+    margin-bottom: 15px;
+    font-size: 1.3rem;
+}
+
+.warning-message p {
+    color: #ccc;
+    font-size: 1.1rem;
+    line-height: 1.6;
+    margin-bottom: 20px;
+}
+
+.primary-warning {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 15px;
+    background: rgba(255, 193, 7, 0.1);
+    border: 1px solid #ffc107;
+    border-radius: 8px;
+    color: #ffc107;
+    text-align: left;
+}
+
+.primary-warning i {
+    color: #ffc107;
+    font-size: 1.2rem;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+}
+
+.delete-form {
+    margin: 0;
+}
+
+@media (max-width: 768px) {
+    .action-buttons {
+        flex-direction: column-reverse;
+        gap: 15px;
+    }
+    
+    .confirmation-container {
+        padding: 20px;
+    }
+    
+    .card-display {
+        min-width: 250px;
+    }
+    
+    .card-number {
+        font-size: 1.2rem;
+        letter-spacing: 2px;
+    }
+}
+</style>
 {% endblock %}

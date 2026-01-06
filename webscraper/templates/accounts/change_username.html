@@ -1,15 +1,8 @@
 {% extends "base.html" %}
-{% block content %}
-<div class="navbar">
-    <div class="nav-left">
-        <h2><a href="{% url 'home' %}">Web Scraper</a></h2>
-    </div>
-    <div class="nav-right">
-        <a href="{% url 'profile' %}" class="btn btn-secondary">Back to Profile</a>
-        <a href="{% url 'logout' %}" class="btn">Logout</a>
-    </div>
-</div>
 
+{% block title %}Change Username{% endblock %}
+
+{% block content %}
 <div class="container">
     <div class="form-container">
         <h1>

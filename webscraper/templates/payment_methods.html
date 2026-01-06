@@ -1,8 +1,15 @@
 {% extends "base.html" %}
-
-{% block title %}Payment Methods{% endblock %}
-
 {% block content %}
+<div class="navbar">
+    <div class="nav-left">
+        <h2><a href="{% url 'home' %}">Web Scraper</a></h2>
+    </div>
+    <div class="nav-right">
+        <a href="{% url 'profile' %}" class="btn btn-secondary">Back to Profile</a>
+        <a href="{% url 'logout' %}" class="btn">Logout</a>
+    </div>
+</div>
+
 <div class="container">
     <div class="header-section">
         <h1>Payment Methods</h1>
@@ -17,7 +24,7 @@
         {% endfor %}
     {% endif %}
 
-    <div class="payment-methods-grid">{}
+    <div class="payment-methods-grid">
         {% if payment_methods %}
             {% for payment in payment_methods %}
                 <div class="payment-method-card">
@@ -77,4 +84,164 @@
         {% endif %}
     </div>
 </div>
+
+<style>
+.container {
+    max-width: 1200px;
+    margin: 20px auto;
+    padding: 0 20px;
+}
+
+.header-section {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    padding: 30px;
+    background: var(--secondary-bg-color);
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+}
+
+.header-section h1 {
+    margin: 0;
+    color: var(--text-color);
+}
+
+.payment-methods-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 25px;
+}
+
+.payment-method-card {
+    background: var(--secondary-bg-color);
+    border-radius: 16px;
+    padding: 25px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    transition: all 0.3s ease;
+    border: 1px solid #333;
+}
+
+.payment-method-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(187, 134, 252, 0.2);
+    border-color: var(--primary-color);
+}
+
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.card-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.card-brand i {
+    font-size: 2rem;
+}
+
+.card-type {
+    font-weight: 600;
+    color: var(--text-color);
+    font-size: 1.1rem;
+}
+
+.primary-badge {
+    background: var(--primary-color);
+    color: var(--primary-bg-color);
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.card-details {
+    margin-bottom: 20px;
+}
+
+.card-number {
+    font-family: 'Courier New', monospace;
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: var(--text-color);
+    margin-bottom: 10px;
+    letter-spacing: 2px;
+}
+
+.cardholder-name {
+    color: #aaa;
+    font-weight: 500;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    font-size: 0.9rem;
+    letter-spacing: 1px;
+}
+
+.card-expiry {
+    color: #aaa;
+    font-size: 0.9rem;
+}
+
+.card-actions {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.card-footer {
+    border-top: 1px solid #333;
+    padding-top: 15px;
+}
+
+.text-muted {
+    color: #6c757d !important;
+    font-size: 0.85rem;
+}
+
+.empty-state {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 60px 20px;
+    background: var(--secondary-bg-color);
+    border-radius: 16px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+}
+
+.empty-icon {
+    font-size: 4rem;
+    color: #333;
+    margin-bottom: 20px;
+}
+
+.empty-state h3 {
+    color: var(--text-color);
+    margin-bottom: 15px;
+}
+
+.empty-state p {
+    color: #aaa;
+    margin-bottom: 25px;
+    font-size: 1.1rem;
+}
+
+@media (max-width: 768px) {
+    .payment-methods-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .header-section {
+        flex-direction: column;
+        gap: 20px;
+        text-align: center;
+    }
+}
+</style>
 {% endblock %}

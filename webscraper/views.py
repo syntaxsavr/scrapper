@@ -10,14 +10,8 @@ from .forms import CustomUserCreationForm  # signup form
 from celery.result import AsyncResult
 
 def home_view(request):
-    context = {}
-    if request.user.is_authenticated:  # if logged in
-        profile, created = UserProfile.objects.get_or_create(  # get or make profile for dropdown
-            user=request.user,
-            defaults={'full_name': request.user.get_full_name() or request.user.username}
-        )
-        context['profile'] = profile  # pass to template
-    return render(request, "home.html", context)
+    # simple home view - profile context handled by context processor now
+    return render(request, "home.html")
 
 def api_search(request):
     query = request.GET.get("q", "")  # get search term
@@ -98,17 +92,24 @@ def api_task_status(_, task_id):
     task = AsyncResult(task_id)  # get celery task result
 
     if task.ready():  # task finished
-        result = task.result
+        if task.successful():  # task completed successfully
+            result = task.result
 
-        results = Dataset.objects.filter(  # get matching datasets
-            id__in=[r["id"] for r in result["results"]]
-        )
+            results = Dataset.objects.filter(  # get matching datasets
+                id__in=[r["id"] for r in result["results"]]
+            )
 
-        return JsonResponse({
-            "status": "completed",
-            "count": result["count"],
-            "results": list(results.values("id", "title", "description")),
-        })
+            return JsonResponse({
+                "status": "completed",
+                "count": result["count"],
+                "results": list(results.values("id", "title", "description")),
+            })
+        else:  # task failed
+            error_info = str(task.info) if task.info else "Unknown error occurred"
+            return JsonResponse({
+                "status": "failed",
+                "error": error_info,
+            })
     else:
         return JsonResponse({
             "status": "pending",
