@@ -85,13 +85,5 @@ services:
       redis:
         condition: service_healthy
 
-  selenium:
-    image: selenium/standalone-chrome:latest
-    platform: linux/amd64
-    ports:
-      - "4444:4444"
-      - "7900:7900"
-    shm_size: 2gb
-
 volumes:
   postgres_data:
