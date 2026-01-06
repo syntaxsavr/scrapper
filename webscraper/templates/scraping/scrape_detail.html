@@ -1,0 +1,269 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ scrape.search_query }} - Scrape Details{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" type="text/css" href="{% static 'css/scraping.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-12">
+            <!-- scrape header -->
+            <div class="scraping-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h2>
+                            <i class="fas fa-search"></i>
+                            "{{ scrape.search_query }}"
+                            {% if scrape.is_bookmarked %}
+                                <i class="fas fa-bookmark text-warning"></i>
+                            {% endif %}
+                        </h2>
+                        <div class="scrape-meta">
+                            <span class="status-badge status-{{ scrape.status }}">
+                                {{ scrape.get_status_display }}
+                            </span>
+                            {% if scrape.project %}
+                                <span class="project-badge" style="background-color: {{ scrape.project.color_theme }}">
+                                    {{ scrape.project.name }}
+                                </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div>
+                        <a href="{% url 'edit_scrape' scrape.id %}" class="btn btn-primary">
+                            <i class="fas fa-edit"></i> Edit Scrape
+                        </a>
+                        <a href="{% url 'scrapes' %}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> Back to Scrapes
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- scrape stats -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="stats-card">
+                        <div class="stats-icon">
+                            <i class="fas fa-database"></i>
+                        </div>
+                        <div class="stats-content">
+                            <h3>{{ total_items }}</h3>
+                            <p>Total Items</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stats-card">
+                        <div class="stats-icon">
+                            <i class="fas fa-star"></i>
+                        </div>
+                        <div class="stats-content">
+                            <h3>{{ starred_count }}</h3>
+                            <p>Starred Items</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stats-card">
+                        <div class="stats-icon">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div class="stats-content">
+                            <h3>{{ scrape.started_at|date:"M j" }}</h3>
+                            <p>Started</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stats-card">
+                        <div class="stats-icon">
+                            <i class="fas fa-stopwatch"></i>
+                        </div>
+                        <div class="stats-content">
+                            <h3>
+                                {% if scrape.completed_at %}
+                                    {{ scrape.duration|floatformat:1 }}s
+                                {% else %}
+                                    --
+                                {% endif %}
+                            </h3>
+                            <p>Duration</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- scrape info -->
+            {% if scrape.notes or scrape.tags %}
+                <div class="project-section mb-4">
+                    <div class="section-header">
+                        <h4><i class="fas fa-info-circle"></i> Scrape Information</h4>
+                    </div>
+                    
+                    {% if scrape.notes %}
+                        <div class="info-card">
+                            <h6><i class="fas fa-sticky-note"></i> Notes</h6>
+                            <p>{{ scrape.notes }}</p>
+                        </div>
+                    {% endif %}
+                    
+                    {% if scrape.tags %}
+                        <div class="info-card">
+                            <h6><i class="fas fa-tags"></i> Tags</h6>
+                            <div class="tags">
+                                {% for tag in scrape.tags.split:',' %}
+                                    <span class="tag">{{ tag|trim }}</span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+            {% endif %}
+
+            <!-- scraped items -->
+            <div class="project-section">
+                <div class="section-header">
+                    <h4><i class="fas fa-list"></i> Scraped Items</h4>
+                    {% if starred_count > 0 %}
+                        <div class="filter-controls">
+                            <button class="btn btn-outline-warning btn-sm" onclick="toggleStarredOnly()">
+                                <i class="fas fa-star"></i> Show Starred Only
+                            </button>
+                        </div>
+                    {% endif %}
+                </div>
+                
+                {% if items %}
+                    <div class="scraped-items" id="scrapedItems">
+                        {% for item in items %}
+                            <div class="scraped-item {% if item.is_starred %}starred{% endif %}" 
+                                 data-starred="{{ item.is_starred|yesno:'true,false' }}">
+                                <div class="item-header">
+                                    <h5>
+                                        {% if item.url %}
+                                            <a href="{{ item.url }}" target="_blank" rel="noopener">
+                                                {{ item.title }}
+                                                <i class="fas fa-external-link-alt"></i>
+                                            </a>
+                                        {% else %}
+                                            {{ item.title }}
+                                        {% endif %}
+                                    </h5>
+                                    <div class="item-actions">
+                                        <button class="btn btn-sm btn-outline-warning star-btn" 
+                                                onclick="toggleStar({{ item.id }}, this)"
+                                                title="{% if item.is_starred %}Remove from starred{% else %}Add to starred{% endif %}">
+                                            <i class="fas fa-star{% if not item.is_starred %}-o{% endif %}"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                {% if item.description %}
+                                    <p class="item-description">{{ item.description }}</p>
+                                {% endif %}
+                                
+                                <div class="item-meta">
+                                    {% if item.source %}
+                                        <span><i class="fas fa-globe"></i> {{ item.source }}</span>
+                                    {% endif %}
+                                    <span><i class="fas fa-calendar"></i> {{ item.created_at|date:"M j, Y g:i A" }}</span>
+                                    {% if item.tags %}
+                                        <div class="tags">
+                                            {% for tag in item.tags.split:',' %}
+                                                <span class="tag">{{ tag|trim }}</span>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                
+                                {% if item.notes %}
+                                    <div class="item-notes">
+                                        <strong>Notes:</strong> {{ item.notes }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-database fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">No items found</h5>
+                        <p class="text-muted">
+                            {% if scrape.status == 'running' %}
+                                This scrape is still running. Items will appear here as they are found.
+                            {% elif scrape.status == 'failed' %}
+                                This scrape failed to complete. Check the error details.
+                            {% else %}
+                                No items were found for this search query.
+                            {% endif %}
+                        </p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let showingStarredOnly = false;
+
+function toggleStarredOnly() {
+    // toggle between showing all items vs starred only
+    const items = document.querySelectorAll('.scraped-item');
+    const button = document.querySelector('[onclick="toggleStarredOnly()"]');
+    
+    showingStarredOnly = !showingStarredOnly;
+    
+    items.forEach(item => {
+        const isStarred = item.dataset.starred === 'true';
+        if (showingStarredOnly && !isStarred) {
+            item.style.display = 'none';
+        } else {
+            item.style.display = 'block';
+        }
+    });
+    
+    // update button text
+    if (showingStarredOnly) {
+        button.innerHTML = '<i class="fas fa-list"></i> Show All Items';
+        button.classList.remove('btn-outline-warning');
+        button.classList.add('btn-warning');
+    } else {
+        button.innerHTML = '<i class="fas fa-star"></i> Show Starred Only';
+        button.classList.remove('btn-warning');
+        button.classList.add('btn-outline-warning');
+    }
+}
+
+function toggleStar(itemId, button) {
+    // toggle star status for an item (would need AJAX in real implementation)
+    const item = button.closest('.scraped-item');
+    const icon = button.querySelector('i');
+    const isCurrentlyStarred = item.classList.contains('starred');
+    
+    if (isCurrentlyStarred) {
+        // remove star
+        item.classList.remove('starred');
+        item.dataset.starred = 'false';
+        icon.classList.remove('fas');
+        icon.classList.add('far');
+        button.setAttribute('title', 'Add to starred');
+    } else {
+        // add star
+        item.classList.add('starred');
+        item.dataset.starred = 'true';
+        icon.classList.remove('far');
+        icon.classList.add('fas');
+        button.setAttribute('title', 'Remove from starred');
+    }
+    
+    // in real implementation, would send AJAX request to update backend
+    console.log(`Toggle star for item ${itemId}: ${!isCurrentlyStarred}`);
+}
+</script>
+{% endblock %}

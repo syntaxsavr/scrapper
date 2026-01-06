@@ -1,0 +1,212 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}My Scrapes{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/scraping.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="page-header">
+        <h1><i class="fas fa-search"></i> My Scrapes</h1>
+        <a href="{% url 'dashboard' %}" class="btn btn-primary">
+            <i class="fas fa-chart-line"></i> Dashboard
+        </a>
+    </div>
+
+    <!-- Filters -->
+    <div class="filters-section">
+        <div class="card">
+            <div class="card-body">
+                <form method="get" class="filters-form">
+                    <div class="form-row">
+                        <div class="form-group col-md-3">
+                            <label for="status">Status</label>
+                            <select name="status" id="status" class="form-control">
+                                <option value="">All Statuses</option>
+                                <option value="completed" {% if current_status == 'completed' %}selected{% endif %}>Completed</option>
+                                <option value="failed" {% if current_status == 'failed' %}selected{% endif %}>Failed</option>
+                                <option value="running" {% if current_status == 'running' %}selected{% endif %}>Running</option>
+                                <option value="pending" {% if current_status == 'pending' %}selected{% endif %}>Pending</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group col-md-3">
+                            <label for="project">Project</label>
+                            <select name="project" id="project" class="form-control">
+                                <option value="">All Projects</option>
+                                {% for project in projects %}
+                                    <option value="{{ project.id }}" {% if current_project == project.id|stringformat:"s" %}selected{% endif %}>
+                                        {{ project.name }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="form-group col-md-2">
+                            <label for="bookmarked">Bookmarked</label>
+                            <select name="bookmarked" id="bookmarked" class="form-control">
+                                <option value="">All</option>
+                                <option value="true" {% if current_bookmarked == 'true' %}selected{% endif %}>Bookmarked Only</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group col-md-2">
+                            <label>&nbsp;</label>
+                            <button type="submit" class="btn btn-primary btn-block">
+                                <i class="fas fa-filter"></i> Filter
+                            </button>
+                        </div>
+
+                        <div class="form-group col-md-2">
+                            <label>&nbsp;</label>
+                            <a href="{% url 'scrapes' %}" class="btn btn-outline-secondary btn-block">
+                                <i class="fas fa-times"></i> Clear
+                            </a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scrapes List -->
+    {% if scrapes %}
+        <div class="scrapes-list">
+            {% for scrape in scrapes %}
+            <div class="scrape-card">
+                <div class="scrape-header">
+                    <div class="scrape-info">
+                        <h4>
+                            <a href="{% url 'scrape_detail' scrape.id %}">{{ scrape.query }}</a>
+                            {% if scrape.is_bookmarked %}
+                                <i class="fas fa-bookmark text-warning" title="Bookmarked"></i>
+                            {% endif %}
+                        </h4>
+                        <div class="scrape-meta">
+                            <span class="badge badge-{{ scrape.status }}">{{ scrape.get_status_display }}</span>
+                            <span class="text-muted">{{ scrape.started_at|timesince }} ago</span>
+                            {% if scrape.project %}
+                                <span class="project-tag" style="background-color: {{ scrape.project.color }}20; color: {{ scrape.project.color }};">
+                                    {{ scrape.project.name }}
+                                </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="scrape-stats">
+                        {% if scrape.status == 'completed' %}
+                            <div class="stat">
+                                <i class="fas fa-database"></i>
+                                <strong>{{ scrape.results_count }}</strong> results
+                            </div>
+                            <div class="stat">
+                                <i class="fas fa-clock"></i>
+                                {{ scrape.duration_formatted }}
+                            </div>
+                        {% elif scrape.status == 'failed' %}
+                            <div class="stat text-danger">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                Failed
+                            </div>
+                        {% elif scrape.status == 'running' %}
+                            <div class="stat text-info">
+                                <i class="fas fa-spinner fa-spin"></i>
+                                In Progress
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                {% if scrape.notes or scrape.tags %}
+                <div class="scrape-details">
+                    {% if scrape.notes %}
+                        <p class="scrape-notes">
+                            <i class="fas fa-sticky-note"></i>
+                            {{ scrape.notes|truncatechars:100 }}
+                        </p>
+                    {% endif %}
+                    {% if scrape.tags %}
+                        <div class="scrape-tags">
+                            {% for tag in scrape.tag_list %}
+                                <span class="tag">{{ tag }}</span>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+                {% endif %}
+
+                <div class="scrape-actions">
+                    <a href="{% url 'scrape_detail' scrape.id %}" class="btn btn-sm btn-primary">
+                        <i class="fas fa-eye"></i> View
+                    </a>
+                    <a href="{% url 'edit_scrape' scrape.id %}" class="btn btn-sm btn-outline-secondary">
+                        <i class="fas fa-edit"></i> Edit
+                    </a>
+                    {% if not scrape.is_bookmarked %}
+                        <button class="btn btn-sm btn-outline-warning bookmark-btn" data-scrape-id="{{ scrape.id }}">
+                            <i class="fas fa-bookmark"></i> Bookmark
+                        </button>
+                    {% else %}
+                        <button class="btn btn-sm btn-warning bookmark-btn bookmarked" data-scrape-id="{{ scrape.id }}">
+                            <i class="fas fa-bookmark"></i> Bookmarked
+                        </button>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty-state">
+            <div class="empty-icon">
+                <i class="fas fa-search"></i>
+            </div>
+            <h3>No Scrapes Found</h3>
+            {% if current_status or current_project or current_bookmarked %}
+                <p class="text-muted">No scrapes match your current filters. Try adjusting the filters above.</p>
+                <a href="{% url 'scrapes' %}" class="btn btn-primary">
+                    <i class="fas fa-times"></i> Clear Filters
+                </a>
+            {% else %}
+                <p class="text-muted">You haven't performed any scrapes yet. Start scraping to see your results here!</p>
+                <a href="{% url 'home' %}" class="btn btn-primary">
+                    <i class="fas fa-search"></i> Start Scraping
+                </a>
+            {% endif %}
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// scrapes list interactions
+document.addEventListener('DOMContentLoaded', function() {
+    // bookmark toggle functionality - would need api endpoint
+    const bookmarkBtns = document.querySelectorAll('.bookmark-btn');
+    
+    bookmarkBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const scrapeId = this.dataset.scrapeId;
+            const isBookmarked = this.classList.contains('bookmarked');
+            
+            // toggle bookmark status
+            if (isBookmarked) {
+                this.classList.remove('bookmarked', 'btn-warning');
+                this.classList.add('btn-outline-warning');
+                this.innerHTML = '<i class="fas fa-bookmark"></i> Bookmark';
+            } else {
+                this.classList.add('bookmarked', 'btn-warning');
+                this.classList.remove('btn-outline-warning');
+                this.innerHTML = '<i class="fas fa-bookmark"></i> Bookmarked';
+            }
+            
+            // could send ajax request here to update bookmark status
+            console.log('Toggle bookmark for scrape:', scrapeId);
+        });
+    });
+});
+</script>
+{% endblock %}

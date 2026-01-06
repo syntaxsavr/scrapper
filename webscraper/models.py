@@ -3,6 +3,7 @@ from django.contrib.auth.models import User
 from django.utils import timezone
 from datetime import timedelta
 from django.core.validators import MinLengthValidator, MaxLengthValidator
+import json  # for storing scrape results
 
 class Log(models.Model):
     message = models.CharField(max_length=200)
@@ -90,3 +91,117 @@ class PaymentMethod(models.Model):
         if self.is_primary:
             PaymentMethod.objects.filter(user=self.user, is_primary=True).update(is_primary=False)  # remove other primaries
         super().save(*args, **kwargs)
+
+
+class ScrapingProject(models.Model):
+    """User's scraping projects - organize scraped data"""
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='scraping_projects')  # owner
+    name = models.CharField(max_length=200)  # project name
+    description = models.TextField(blank=True)  # what this project is about
+    
+    # project settings
+    is_favorite = models.BooleanField(default=False)  # star important projects
+    color = models.CharField(max_length=7, default='#007bff')  # project color theme
+    
+    created_at = models.DateTimeField(auto_now_add=True)  # when made
+    updated_at = models.DateTimeField(auto_now=True)  # last modified
+    
+    class Meta:
+        ordering = ['-updated_at']  # newest first
+        unique_together = ['user', 'name']  # no duplicate project names per user
+    
+    def __str__(self):
+        return f"{self.user.username} - {self.name}"
+    
+    @property 
+    def scrape_count(self):
+        """How many scrapes in this project"""
+        return self.scrapes.count()  # count related scrapes
+    
+    @property
+    def latest_scrape(self):
+        """Most recent scrape in project"""
+        return self.scrapes.first()  # first = newest due to ordering
+
+
+class UserScrape(models.Model):
+    """Individual scraping session by user"""
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('running', 'Running'), 
+        ('completed', 'Completed'),
+        ('failed', 'Failed'),
+        ('cancelled', 'Cancelled'),
+    ]
+    
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='scrapes')  # who scraped
+    project = models.ForeignKey(ScrapingProject, on_delete=models.CASCADE, related_name='scrapes', null=True, blank=True)  # which project
+    
+    # scrape details
+    query = models.CharField(max_length=500)  # what they searched for
+    source = models.CharField(max_length=100, default='hugging_face')  # where scraped from
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')  # current state
+    
+    # results and stats
+    results_count = models.IntegerField(default=0)  # how many results found
+    results_data = models.JSONField(default=dict, blank=True)  # actual scraped data
+    error_message = models.TextField(blank=True)  # if something went wrong
+    
+    # timing info
+    started_at = models.DateTimeField(auto_now_add=True)  # when started
+    completed_at = models.DateTimeField(null=True, blank=True)  # when finished
+    duration_seconds = models.IntegerField(null=True, blank=True)  # how long it took
+    
+    # user organization
+    is_bookmarked = models.BooleanField(default=False)  # saved for later
+    notes = models.TextField(blank=True)  # user notes about this scrape
+    tags = models.CharField(max_length=500, blank=True)  # comma separated tags
+    
+    class Meta:
+        ordering = ['-started_at']  # newest first
+    
+    def __str__(self):
+        return f"{self.user.username} - {self.query[:50]}"
+    
+    @property
+    def duration_formatted(self):
+        """Human readable duration"""
+        if not self.duration_seconds:
+            return "Unknown"
+        
+        minutes, seconds = divmod(self.duration_seconds, 60)
+        if minutes > 0:
+            return f"{minutes}m {seconds}s"
+        return f"{seconds}s"
+    
+    @property
+    def tag_list(self):
+        """Convert comma separated tags to list"""
+        if not self.tags:
+            return []
+        return [tag.strip() for tag in self.tags.split(',') if tag.strip()]
+
+
+class ScrapedDataItem(models.Model):
+    """Individual item from a scrape session"""
+    scrape = models.ForeignKey(UserScrape, on_delete=models.CASCADE, related_name='items')  # which scrape this belongs to
+    
+    # item details
+    title = models.CharField(max_length=500)  # dataset title
+    description = models.TextField(blank=True)  # dataset description
+    url = models.URLField(max_length=1000)  # link to original
+    
+    # metadata
+    downloads = models.IntegerField(null=True, blank=True)  # how many downloads
+    likes = models.IntegerField(null=True, blank=True)  # how many likes
+    author = models.CharField(max_length=200, blank=True)  # who made it
+    tags = models.TextField(blank=True)  # dataset tags
+    
+    # user interaction
+    is_starred = models.BooleanField(default=False)  # user marked as important
+    user_notes = models.TextField(blank=True)  # user notes about this item
+    
+    created_at = models.DateTimeField(auto_now_add=True)  # when scraped
+    
+    def __str__(self):
+        return f"{self.scrape.user.username} - {self.title[:50]}"

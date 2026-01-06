@@ -1,0 +1,175 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Scraping Dashboard{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/scraping.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container dashboard">
+    <div class="dashboard-header">
+        <h1><i class="fas fa-chart-line"></i> Scraping Dashboard</h1>
+        <p class="text-muted">Overview of your scraping activity and projects</p>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-search"></i>
+            </div>
+            <div class="stat-info">
+                <h3>{{ total_scrapes }}</h3>
+                <p>Total Scrapes</p>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-folder"></i>
+            </div>
+            <div class="stat-info">
+                <h3>{{ total_projects }}</h3>
+                <p>Projects</p>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-database"></i>
+            </div>
+            <div class="stat-info">
+                <h3>{{ total_results }}</h3>
+                <p>Items Scraped</p>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-bookmark"></i>
+            </div>
+            <div class="stat-info">
+                <h3>{{ bookmarked_scrapes }}</h3>
+                <p>Bookmarked</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="dashboard-grid">
+        <!-- Charts Section -->
+        <div class="chart-section">
+            <div class="card">
+                <div class="card-header">
+                    <h4><i class="fas fa-chart-bar"></i> Scraping Activity (Last 6 Months)</h4>
+                </div>
+                <div class="card-body">
+                    <canvas id="monthlyChart" width="400" height="200"></canvas>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h4><i class="fas fa-pie-chart"></i> Status Distribution</h4>
+                </div>
+                <div class="card-body">
+                    <canvas id="statusChart" width="300" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Activity Feed -->
+        <div class="activity-section">
+            <div class="card">
+                <div class="card-header">
+                    <h4><i class="fas fa-clock"></i> Recent Activity</h4>
+                    <a href="{% url 'scrapes' %}" class="btn btn-sm btn-outline-primary">View All</a>
+                </div>
+                <div class="card-body">
+                    {% if recent_activity %}
+                        <div class="activity-list">
+                            {% for scrape in recent_activity %}
+                            <div class="activity-item">
+                                <div class="activity-icon status-{{ scrape.status }}">
+                                    {% if scrape.status == 'completed' %}
+                                        <i class="fas fa-check"></i>
+                                    {% elif scrape.status == 'failed' %}
+                                        <i class="fas fa-times"></i>
+                                    {% elif scrape.status == 'running' %}
+                                        <i class="fas fa-spinner fa-spin"></i>
+                                    {% else %}
+                                        <i class="fas fa-clock"></i>
+                                    {% endif %}
+                                </div>
+                                <div class="activity-content">
+                                    <p><strong>{{ scrape.query|truncatechars:40 }}</strong></p>
+                                    <small class="text-muted">
+                                        {{ scrape.started_at|timesince }} ago
+                                        {% if scrape.project %}
+                                            in <span class="project-tag" style="background-color: {{ scrape.project.color }}20; color: {{ scrape.project.color }};">{{ scrape.project.name }}</span>
+                                        {% endif %}
+                                    </small>
+                                </div>
+                                <div class="activity-status">
+                                    <span class="badge badge-{{ scrape.status }}">{{ scrape.get_status_display }}</span>
+                                    {% if scrape.status == 'completed' %}
+                                        <small>{{ scrape.results_count }} results</small>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted">No recent activity. Start scraping to see your activity here!</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Favorite Projects -->
+            {% if favorite_projects %}
+            <div class="card">
+                <div class="card-header">
+                    <h4><i class="fas fa-star"></i> Favorite Projects</h4>
+                    <a href="{% url 'projects' %}" class="btn btn-sm btn-outline-primary">All Projects</a>
+                </div>
+                <div class="card-body">
+                    <div class="projects-quick-list">
+                        {% for project in favorite_projects %}
+                        <div class="project-quick-item">
+                            <div class="project-color" style="background-color: {{ project.color }};"></div>
+                            <div class="project-info">
+                                <a href="{% url 'project_detail' project.id %}"><strong>{{ project.name }}</strong></a>
+                                <small class="text-muted">{{ project.scrape_count }} scrapes</small>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="quick-actions">
+        <h4>Quick Actions</h4>
+        <div class="action-buttons">
+            <a href="{% url 'create_project' %}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> New Project
+            </a>
+            <a href="{% url 'scrapes' %}" class="btn btn-outline-secondary">
+                <i class="fas fa-list"></i> View All Scrapes
+            </a>
+            <a href="{% url 'scrapes' %}?bookmarked=true" class="btn btn-outline-warning">
+                <i class="fas fa-bookmark"></i> Bookmarked
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="{% static 'js/dashboard-charts.js' %}"></script>
+{% endblock %}
