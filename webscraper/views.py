@@ -1,67 +1,77 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse
 from django.views.decorators.http import require_GET
-from .tasks import search_datasets, run_hugging_face_search_task
-from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
+from .tasks import search_datasets, run_hugging_face_search_task  # celery tasks
+from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth import login
-from .models import Dataset
+from django.contrib import messages
+from .models import Dataset, UserProfile  # our models
+from .forms import CustomUserCreationForm  # signup form
 from celery.result import AsyncResult
 
 def home_view(request):
-    return render(request, "home.html")
+    context = {}
+    if request.user.is_authenticated:  # if logged in
+        profile, created = UserProfile.objects.get_or_create(  # get or make profile for dropdown
+            user=request.user,
+            defaults={'full_name': request.user.get_full_name() or request.user.username}
+        )
+        context['profile'] = profile  # pass to template
+    return render(request, "home.html", context)
 
 def api_search(request):
-    query = request.GET.get("q", "")
+    query = request.GET.get("q", "")  # get search term
 
-    if not query:
+    if not query:  # need something to search
         return JsonResponse({"error": "No query provided"}, status=400)
 
-    task = search_datasets.delay(query)
+    task = search_datasets.delay(query)  # start background task
 
-    return JsonResponse({
+    return JsonResponse({  # return task info
         "task_id": task.id,
         "status": "started",
         "message": f"Search started for '{query}'",
     })
 
 def login_view(request):
-    if request.user.is_authenticated:
+    if request.user.is_authenticated:  # already logged in
         return redirect("home")
     
-    if request.method == "POST":
+    if request.method == "POST":  # form submitted
         form = AuthenticationForm(data=request.POST)
         if form.is_valid():
-            user = form.get_user()
-            login(request, user)
-            return redirect("home")
+            user = form.get_user()  # get authenticated user
+            login(request, user)  # log them in
+            return redirect("home")  # go to homepage
     else:
-        form = AuthenticationForm()
+        form = AuthenticationForm()  # empty login form
         
     context = {
         "form": form
     }
-    return render(request, "login.html", context)
+    return render(request, "accounts/login.html", context)
 
 def signup_view(request):
-    if request.user.is_authenticated:
+    if request.user.is_authenticated:  # already logged in
         return redirect("home")
 
-    if request.method == "POST":
-        form = UserCreationForm(request.POST)
+    if request.method == "POST":  # form submitted
+        form = CustomUserCreationForm(request.POST)
         if form.is_valid():
-            user = form.save()
-            login(request, user)
+            user = form.save()  # create new user and profile
+            login(request, user)  # auto login after signup
+            messages.success(request, 'Account created successfully!')
             return redirect("home")
     else:
-        form = UserCreationForm()
+        form = CustomUserCreationForm()  # empty signup form
 
     context = {
         "form": form
     }
-    return render(request, "signup.html", context)
+    return render(request, "accounts/signup.html", context)
 
 def detailed_view(request, id):
-    dataset = get_object_or_404(Dataset, id=id)
+    dataset = get_object_or_404(Dataset, id=id)  # get specific dataset
 
     context = {
         "dataset": dataset
@@ -69,12 +79,12 @@ def detailed_view(request, id):
     return render(request, "detailed_view.html", context)
 
 def api_task_status(_, task_id):
-    task = AsyncResult(task_id)
+    task = AsyncResult(task_id)  # get celery task result
 
-    if task.ready():
+    if task.ready():  # task finished
         result = task.result
 
-        results = Dataset.objects.filter(
+        results = Dataset.objects.filter(  # get matching datasets
             id__in=[r["id"] for r in result["results"]]
         )
 
@@ -104,3 +114,6 @@ def api_scrape_hugging_face_search(request):
         "status": "started",
         "limit": limit
     })
+
+
+

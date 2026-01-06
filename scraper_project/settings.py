@@ -62,23 +62,33 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'scraper_project.wsgi.application'
 
-# POSTGRESQL - Smart defaults
-DB_NAME = os.getenv('DB_NAME', 'scrapper_db')
-DB_USER = os.getenv('DB_USER', 'scrapper_user')
-DB_PASSWORD = os.getenv('DB_PASSWORD', 'password123')
-DB_HOST = os.getenv('DB_HOST', 'localhost')
-DB_PORT = os.getenv('DB_PORT', '5432')
-
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': DB_NAME,
-        'USER': DB_USER,
-        'PASSWORD': DB_PASSWORD,
-        'HOST': DB_HOST,
-        'PORT': DB_PORT,
+# Database Configuration
+if ENVIRONMENT == 'development' and not os.getenv('USE_POSTGRES'):
+    # Use SQLite for development when PostgreSQL is not available
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
     }
-}
+else:
+    # POSTGRESQL - Smart defaults
+    DB_NAME = os.getenv('DB_NAME', 'scrapper_db')
+    DB_USER = os.getenv('DB_USER', 'scrapper_user')
+    DB_PASSWORD = os.getenv('DB_PASSWORD', 'password123')
+    DB_HOST = os.getenv('DB_HOST', 'localhost')
+    DB_PORT = os.getenv('DB_PORT', '5432')
+
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': DB_NAME,
+            'USER': DB_USER,
+            'PASSWORD': DB_PASSWORD,
+            'HOST': DB_HOST,
+            'PORT': DB_PORT,
+        }
+    }
 
 # Celery Configuration
 CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL', 'redis://redis:6379/0')
@@ -104,6 +114,10 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+# Media files for user uploads
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 

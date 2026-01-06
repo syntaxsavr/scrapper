@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="navbar">
+    <div class="nav-left">
+        <h2><a href="{% url 'home' %}">Web Scraper</a></h2>
+    </div>
+    <div class="nav-right">
+        {% if user.is_authenticated %}
+            <div class="profile-dropdown">
+                <button class="profile-button" id="profileButton">
+                    <div class="profile-avatar">
+                        {% if profile.profile_image %}
+                            <img src="{{ profile.profile_image.url }}" alt="Profile" class="avatar-image">
+                        {% else %}
+                            <div class="avatar-placeholder">
+                                <i class="fas fa-user"></i>
+                            </div>
+                        {% endif %}
+                    </div>
+                    <span class="profile-name">{{ profile.full_name|default:user.username }}</span>
+                    <i class="fas fa-chevron-down dropdown-arrow"></i>
+                </button>
+                
+                <div class="dropdown-menu" id="profileDropdown">
+                    <div class="dropdown-header">
+                        <div class="user-info">
+                            <strong>{{ profile.full_name|default:user.username }}</strong>
+                            <small>@{{ user.username }}</small>
+                        </div>
+                    </div>
+                    <div class="dropdown-divider"></div>
+                    <a href="{% url 'profile' %}" class="dropdown-item">
+                        <i class="fas fa-user"></i> My Profile
+                    </a>
+                    <a href="{% url 'edit_profile' %}" class="dropdown-item">
+                        <i class="fas fa-edit"></i> Edit Profile
+                    </a>
+                    <a href="{% url 'payment_methods' %}" class="dropdown-item">
+                        <i class="fas fa-credit-card"></i> Payment Methods
+                    </a>
+                    {% if can_change_username %}
+                        <a href="{% url 'change_username' %}" class="dropdown-item">
+                            <i class="fas fa-at"></i> Change Username
+                        </a>
+                    {% endif %}
+                    <div class="dropdown-divider"></div>
+                    <form method="post" action="{% url 'logout' %}" class="dropdown-form">
+                        {% csrf_token %}
+                        <button type="submit" class="dropdown-item logout-item">
+                            <i class="fas fa-sign-out-alt"></i> Logout
+                        </button>
+                    </form>
+                </div>
+            </div>
+        {% else %}
+            <a href="{% url 'login' %}" class="btn">Login</a>
+            <a href="{% url 'signup' %}" class="btn btn-primary">Sign Up</a>
+        {% endif %}
+    </div>
+</div>
+
+<div class="container">
+    <div class="profile-header">
+        <div class="profile-image-container">
+            {% if profile.profile_image %}
+                <img src="{{ profile.profile_image.url }}" alt="Profile Picture" class="profile-image">
+            {% else %}
+                <div class="profile-image-placeholder">
+                    <i class="fas fa-user"></i>
+                </div>
+            {% endif %}
+        </div>
+        <div class="profile-info">
+            <h1>{{ profile.full_name }}</h1>
+            <p class="username">@{{ user.username }}</p>
+            {% if profile.bio %}
+                <p class="bio">{{ profile.bio }}</p>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="profile-sections">
+        <div class="profile-section">
+            <div class="section-header">
+                <h3>Profile Information</h3>
+                <a href="{% url 'edit_profile' %}" class="btn btn-secondary">Edit Profile</a>
+            </div>
+            <div class="profile-details">
+                <div class="detail-item">
+                    <strong>Full Name:</strong> {{ profile.full_name }}
+                </div>
+                <div class="detail-item">
+                    <strong>Email:</strong> {{ user.email }}
+                </div>
+                {% if profile.phone_number %}
+                <div class="detail-item">
+                    <strong>Phone:</strong> {{ profile.phone_number }}
+                </div>
+                {% endif %}
+                {% if profile.date_of_birth %}
+                <div class="detail-item">
+                    <strong>Date of Birth:</strong> {{ profile.date_of_birth }}
+                </div>
+                {% endif %}
+                <div class="detail-item">
+                    <strong>Member Since:</strong> {{ user.date_joined|date:"F Y" }}
+                </div>
+            </div>
+        </div>
+
+        <div class="profile-section">
+            <div class="section-header">
+                <h3>Username Settings</h3>
+                {% if can_change_username %}
+                    <a href="{% url 'change_username' %}" class="btn btn-warning">Change Username</a>
+                {% else %}
+                    <span class="disabled-text">Can change in {{ days_until_username_change }} days</span>
+                {% endif %}
+            </div>
+            <div class="username-info">
+                <p>Current Username: <strong>{{ user.username }}</strong></p>
+                {% if not can_change_username %}
+                    <p class="text-muted">You can only change your username every 6 months.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="profile-section">
+            <div class="section-header">
+                <h3>Payment Methods</h3>
+                <a href="{% url 'add_payment_method' %}" class="btn btn-success">Add Payment Method</a>
+            </div>
+            <div class="payment-methods">
+                {% if payment_methods %}
+                    {% for payment in payment_methods %}
+                        <div class="payment-card">
+                            <div class="payment-info">
+                                <div class="card-details">
+                                    <i class="fab fa-cc-{{ payment.card_type|lower }}"></i>
+                                    <span class="card-type">{{ payment.get_card_type_display }}</span>
+                                    <span class="card-number">•••• {{ payment.last_four_digits }}</span>
+                                    {% if payment.is_primary %}
+                                        <span class="primary-badge">Primary</span>
+                                    {% endif %}
+                                </div>
+                                <div class="card-expiry">
+                                    Expires {{ payment.expiry_month }}/{{ payment.expiry_year }}
+                                </div>
+                            </div>
+                            <div class="payment-actions">
+                                <a href="{% url 'edit_payment_method' payment.id %}" class="btn btn-sm btn-secondary">Edit</a>
+                                <a href="{% url 'delete_payment_method' payment.id %}" class="btn btn-sm btn-danger">Delete</a>
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="no-payment-methods">No payment methods added yet.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

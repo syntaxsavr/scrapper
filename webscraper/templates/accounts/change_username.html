@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="navbar">
+    <div class="nav-left">
+        <h2><a href="{% url 'home' %}">Web Scraper</a></h2>
+    </div>
+    <div class="nav-right">
+        <a href="{% url 'profile' %}" class="btn btn-secondary">Back to Profile</a>
+        <a href="{% url 'logout' %}" class="btn">Logout</a>
+    </div>
+</div>
+
+<div class="container">
+    <div class="form-container">
+        <h1>
+            <i class="fas fa-edit"></i>
+            Change Username
+        </h1>
+        
+        <div class="current-method">
+            <div class="method-preview">
+                <div class="card-brand">
+                    <i class="fas fa-user"></i>
+                    <span>Current Username: <strong>{{ user.username }}</strong></span>
+                </div>
+            </div>
+        </div>
+
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+
+        <form method="post" class="profile-form">
+            {% csrf_token %}
+            
+            <div class="form-group">
+                <label for="{{ form.new_username.id_for_label }}">
+                    <i class="fas fa-user"></i>
+                    {{ form.new_username.label }}
+                </label>
+                {{ form.new_username }}
+                {% if form.new_username.errors %}
+                    <div class="error">{{ form.new_username.errors }}</div>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.confirm_username.id_for_label }}">
+                    <i class="fas fa-user-check"></i>
+                    {{ form.confirm_username.label }}
+                </label>
+                {{ form.confirm_username }}
+                {% if form.confirm_username.errors %}
+                    <div class="error">{{ form.confirm_username.errors }}</div>
+                {% endif %}
+            </div>
+
+            {% if form.non_field_errors %}
+                <div class="error">{{ form.non_field_errors }}</div>
+            {% endif %}
+
+            <div class="security-notice">
+                <i class="fas fa-info-circle"></i>
+                <div>
+                    <strong>Important:</strong> You can only change your username every 6 months. 
+                    Choose carefully as this action cannot be undone during this period.
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-warning">
+                    <i class="fas fa-save"></i>
+                    Change Username
+                </button>
+                <a href="{% url 'profile' %}" class="btn btn-secondary">
+                    <i class="fas fa-times"></i>
+                    Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
