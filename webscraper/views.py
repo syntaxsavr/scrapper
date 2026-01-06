@@ -1,8 +1,9 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse
 from .tasks import search_datasets, scrap_huggingface_datasets
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth import login
+from .models import Dataset
 from celery.result import AsyncResult
 
 def home_view(request):
@@ -77,3 +78,31 @@ def signup_view(request):
         "form": form
     }
     return render(request, "signup.html", context)
+
+def detailed_view(request, id):
+    dataset = get_object_or_404(Dataset, id=id)
+
+    context = {
+        "dataset": dataset
+    }
+    return render(request, "detailed_view.html", context)
+
+def api_task_status(_, task_id):
+    task = AsyncResult(task_id)
+
+    if task.ready():
+        result = task.result
+
+        results = Dataset.objects.filter(
+            id__in=[r["id"] for r in result["results"]]
+        )
+
+        return JsonResponse({
+            "status": "completed",
+            "count": result["count"],
+            "results": list(results.values("id", "title", "description")),
+        })
+    else:
+        return JsonResponse({
+            "status": "pending",
+        })
