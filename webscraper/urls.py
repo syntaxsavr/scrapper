@@ -2,6 +2,7 @@ from django.urls import path
 from django.contrib.auth.views import LogoutView
 from . import views  # main views
 from .profile_views_package import account_views, payment_views  # profile stuff
+from .profile_views_package import scraping_views  # scraping system
 
 urlpatterns = [
     path("", views.home_view, name="home"),  # homepage
@@ -21,6 +22,17 @@ urlpatterns = [
     path("payment-methods/add/", payment_views.add_payment_method_view, name="add_payment_method"),  # add card
     path("payment-methods/edit/<int:payment_id>/", payment_views.edit_payment_method_view, name="edit_payment_method"),  # edit card
     path("payment-methods/delete/<int:payment_id>/", payment_views.delete_payment_method_view, name="delete_payment_method"),  # delete card
+
+    # Scraping Organization URLs - complete system for data management
+    path("dashboard/", scraping_views.dashboard_view, name="dashboard"),  # main scraping dashboard
+    path("projects/", scraping_views.projects_view, name="projects"),  # list all projects
+    path("projects/create/", scraping_views.create_project_view, name="create_project"),  # create new project
+    path("projects/<int:project_id>/", scraping_views.project_detail_view, name="project_detail"),  # project details
+    path("projects/<int:project_id>/edit/", scraping_views.edit_project_view, name="edit_project"),  # edit project
+    path("scrapes/", scraping_views.scrapes_view, name="scrapes"),  # list all scrapes
+    path("scrapes/<int:scrape_id>/", scraping_views.scrape_detail_view, name="scrape_detail"),  # scrape details
+    path("scrapes/<int:scrape_id>/edit/", scraping_views.edit_scrape_view, name="edit_scrape"),  # edit scrape
+    path("api/scraping-stats/", scraping_views.stats_api_view, name="scraping_stats_api"),  # stats for charts
 
     # API URLs - background tasks
     path("api/search/", views.api_search, name="api_search"),  # start search

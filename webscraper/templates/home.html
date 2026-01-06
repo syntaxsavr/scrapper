@@ -30,6 +30,16 @@
                         </div>
                     </div>
                     <div class="dropdown-divider"></div>
+                    <a href="{% url 'dashboard' %}" class="dropdown-item">
+                        <i class="fas fa-chart-line"></i> Scraping Dashboard
+                    </a>
+                    <a href="{% url 'projects' %}" class="dropdown-item">
+                        <i class="fas fa-folder"></i> My Projects
+                    </a>
+                    <a href="{% url 'scrapes' %}" class="dropdown-item">
+                        <i class="fas fa-search"></i> My Scrapes
+                    </a>
+                    <div class="dropdown-divider"></div>
                     <a href="{% url 'profile' %}" class="dropdown-item">
                         <i class="fas fa-user"></i> My Profile
                     </a>

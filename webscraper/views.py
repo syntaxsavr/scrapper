@@ -25,13 +25,29 @@ def api_search(request):
     if not query:  # need something to search
         return JsonResponse({"error": "No query provided"}, status=400)
 
-    task = search_datasets.delay(query)  # start background task
+    # create user scrape record if user is logged in
+    user_scrape = None
+    if request.user.is_authenticated:
+        from .models import UserScrape  # import here to avoid circular imports
+        user_scrape = UserScrape.objects.create(
+            user=request.user,
+            query=query,
+            source='hugging_face',
+            status='pending'
+        )
 
-    return JsonResponse({  # return task info
+    task = search_datasets.delay(query, user_scrape.id if user_scrape else None)  # pass scrape id to task
+
+    response_data = {  # return task info
         "task_id": task.id,
         "status": "started",
         "message": f"Search started for '{query}'",
-    })
+    }
+    
+    if user_scrape:  # include scrape info for logged in users
+        response_data["scrape_id"] = user_scrape.id
+
+    return JsonResponse(response_data)
 
 def login_view(request):
     if request.user.is_authenticated:  # already logged in

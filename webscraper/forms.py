@@ -2,7 +2,7 @@ from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
-from .models import UserProfile, PaymentMethod
+from .models import UserProfile, PaymentMethod, ScrapingProject, UserScrape, ScrapedDataItem  # add new models, ScrapingProject, UserScrape, ScrapedDataItem
 
 
 class CustomUserCreationForm(UserCreationForm):
@@ -189,3 +189,78 @@ class PaymentMethodForm(forms.ModelForm):
         if len(last_four) != 4:  # exactly 4 digits
             raise ValidationError("Must be exactly 4 digits.")
         return last_four
+
+
+class ScrapingProjectForm(forms.ModelForm):
+    """Form for creating/editing scraping projects"""
+    
+    class Meta:
+        model = ScrapingProject  # need to import this
+        fields = ['name', 'description', 'color', 'is_favorite']
+        widgets = {  # make em look nice
+            'name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Project name (e.g., "AI Models Research")'
+            }),
+            'description': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'What is this project about?'
+            }),
+            'color': forms.TextInput(attrs={
+                'class': 'form-control',
+                'type': 'color',  # color picker
+                'title': 'Choose project color theme'
+            }),
+            'is_favorite': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+        }
+
+
+class ScrapeEditForm(forms.ModelForm):
+    """Form for editing scrape details and organization"""
+    
+    class Meta:
+        model = UserScrape  # need to import this
+        fields = ['project', 'notes', 'tags', 'is_bookmarked']
+        widgets = {
+            'project': forms.Select(attrs={
+                'class': 'form-control'
+            }),
+            'notes': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'Add notes about this scrape...'
+            }),
+            'tags': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'machine learning, datasets, nlp (comma separated)'
+            }),
+            'is_bookmarked': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+        }
+    
+    def __init__(self, *args, user=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        if user:  # filter projects to current user only
+            self.fields['project'].queryset = ScrapingProject.objects.filter(user=user)
+
+
+class DataItemNotesForm(forms.ModelForm):
+    """Form for adding notes to individual scraped items"""
+    
+    class Meta:
+        model = ScrapedDataItem  # need to import this
+        fields = ['user_notes', 'is_starred']
+        widgets = {
+            'user_notes': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 2,
+                'placeholder': 'Add your notes about this dataset...'
+            }),
+            'is_starred': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+        }
