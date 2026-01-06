@@ -1,10 +1,8 @@
 from django.shortcuts import render, redirect
 from django.http import JsonResponse
-from django.views.decorators.http import require_GET
-from .tasks import search_datasets, run_hugging_face_search_task
+from .tasks import search_datasets, scrap_huggingface_datasets
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth import login
-from .models import Log, Dataset
 from celery.result import AsyncResult
 
 def home_view(request):
@@ -16,29 +14,29 @@ def api_search(request):
     if not query:
         return JsonResponse({"error": "No query provided"}, status=400)
 
-    task = search_datasets.delay(query)
+    local_task = search_datasets.delay(query)
+    hf_task = scrap_huggingface_datasets.delay(query)
 
     return JsonResponse({
-        "task_id": task.id,
-        "status": "started",
-        "message": f"Search started for '{query}'",
+        "task_ids": [local_task.id, hf_task.id]
     })
 
 def api_task_status(_request, task_id):
     task = AsyncResult(task_id)
+    _ = _request
 
     if task.ready():
         result = task.result
+        response = {"status": "completed"}
 
-        results = Dataset.objects.filter(
-            id__in=[r["id"] for r in result["results"]]
-        )
+        if "results" in result:
+            response["count"] = result["count"]
+            response["results"] = result["results"]
 
-        return JsonResponse({
-            "status": "completed",
-            "count": result["count"],
-            "results": list(results.values("id", "title", "description")),
-        })
+        if "retrigger_task_id" in result:
+            response["retrigger_task_id"] = result["retrigger_task_id"]
+
+        return JsonResponse(response)
     else:
         return JsonResponse({
             "status": "pending",
@@ -79,20 +77,3 @@ def signup_view(request):
         "form": form
     }
     return render(request, "signup.html", context)
-
-@require_GET
-def api_scrape_hugging_face_search(request):
-    query = request.GET.get("q")
-    if not query:
-        return JsonResponse({"error": "Query parameter 'q' is required."}, status=400)
-
-    limit = int(request.GET.get("limit", 50))
-
-    task = run_hugging_face_search_task.delay(query, limit)
-
-    return JsonResponse({
-        "message": f"Scraping Hugging Face datasets for '{query}' started",
-        "task_id": task.id,
-        "status": "started",
-        "limit": limit
-    })
