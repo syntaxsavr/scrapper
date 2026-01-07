@@ -33,6 +33,7 @@ urlpatterns = [
     path("scrapes/<int:scrape_id>/", scraping_views.scrape_detail_view, name="scrape_detail"),  # scrape details
     path("scrapes/<int:scrape_id>/edit/", scraping_views.edit_scrape_view, name="edit_scrape"),  # edit scrape
     path("scrapes/<int:scrape_id>/delete/", scraping_views.delete_scrape, name="delete_scrape"),  # delete scrape
+    path("scrapes/<int:scrape_id>/export-csv/", scraping_views.export_scrape_csv, name="export_scrape_csv"),  # export as CSV
     path("api/scraping-stats/", scraping_views.stats_api_view, name="scraping_stats_api"),  # stats for charts
     
     # Scraping API endpoints - interactive actions
@@ -46,4 +47,5 @@ urlpatterns = [
     # API URLs - background tasks
     path("api/search/", views.api_search, name="api_search"),  # start search
     path("api/status/<str:task_id>/", views.api_task_status, name="api_task_status"),  # check task status
+    path("api/create-scrape/", views.api_create_scrape, name="api_create_scrape"),  # create scrape from search
 ]

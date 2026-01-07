@@ -29,7 +29,7 @@ def _perform_search_with_scoring(query):
 
     return results_with_scores
 
-@shared_task(queue='search')
+@shared_task
 def search_datasets(query, user_scrape_id=None, is_retrigger=False):
     """Search existing datasets with scoring"""
     from django.utils import timezone
@@ -48,6 +48,9 @@ def search_datasets(query, user_scrape_id=None, is_retrigger=False):
     try:
         results_with_scores = _perform_search_with_scoring(query)
         
+        # Limit results to 100 for performance
+        results_with_scores = results_with_scores[:100]
+        
         # Update user scrape with results if provided
         if user_scrape_id:
             try:
@@ -65,16 +68,38 @@ def search_datasets(query, user_scrape_id=None, is_retrigger=False):
                 scrape.results_data = {'results': results_with_scores}
                 scrape.save()
                 
-                # Create ScrapedDataItem records (only if not already created)
-                if not is_retrigger:
-                    for result in results_with_scores[:50]:  # Limit to first 50
+                # For retriggers, only delete items without author (local search results)
+                # For initial runs, delete all items to start fresh
+                if is_retrigger:
+                    # Delete only local search items (no author field or empty author)
+                    ScrapedDataItem.objects.filter(
+                        scrape=scrape
+                    ).filter(
+                        Q(author__isnull=True) | Q(author='')
+                    ).delete()
+                else:
+                    # Delete all existing items for this scrape to prevent duplicates on rerun
+                    ScrapedDataItem.objects.filter(scrape=scrape).delete()
+                
+                # Create fresh ScrapedDataItem records with proper URLs
+                # Use get_or_create to prevent duplicates on retrigger when item already exists from HuggingFace
+                for result in results_with_scores:
+                    # Check if this item already exists (from HuggingFace scraping)
+                    existing = ScrapedDataItem.objects.filter(
+                        scrape=scrape,
+                        title=result['title']
+                    ).first()
+                    
+                    if not existing:
+                        # Only create if it doesn't exist
                         ScrapedDataItem.objects.create(
                             scrape=scrape,
                             title=result['title'],
                             description=result['description'],
                             url=f"/detailed_view/{result['id']}/",
                         )
-            except Exception:
+            except Exception as e:
+                print(f"Error updating scrape data: {e}")  # Log error
                 pass  # Continue even if scrape update fails
 
         return {
@@ -113,7 +138,8 @@ def scrap_huggingface_datasets(query, user_scrape_id=None):
             pass
     
     try:
-        scraped_items = fetch_huggingface_datasets(query=query, limit=50)
+        # Fetch up to 100 datasets from HuggingFace
+        scraped_items = fetch_huggingface_datasets(query=query, limit=100)
         added_count = 0
 
         for item in scraped_items:
@@ -128,24 +154,39 @@ def scrap_huggingface_datasets(query, user_scrape_id=None):
                 scrape = UserScrape.objects.get(id=user_scrape_id)
                 scrape.results_count = len(scraped_items)
                 scrape.results_data = {
-                    'scraped_items': scraped_items[:50],  # Limit stored data
+                    'scraped_items': scraped_items[:100],
                     'added_count': added_count
                 }
                 scrape.save()
                 
-                # Create ScrapedDataItem records for scraped items
-                for item in scraped_items[:50]:  # Limit to first 50
+                # Delete existing HuggingFace items for this scrape to prevent duplicates
+                # Check for both non-null and non-empty author fields
+                ScrapedDataItem.objects.filter(scrape=scrape).exclude(
+                    Q(author__isnull=True) | Q(author='')
+                ).delete()
+                
+                # Create ScrapedDataItem records for scraped items (limit to 100)
+                for item in scraped_items[:100]:
+                    # Check if this item already exists to prevent duplicates
+                    if ScrapedDataItem.objects.filter(scrape=scrape, title=item['title']).exists():
+                        continue
+                    
+                    # Find the Dataset in our DB to get the proper internal URL
+                    dataset = Dataset.objects.filter(title=item['title']).first()
+                    internal_url = f"/detailed_view/{dataset.id}/" if dataset else item.get('url', '')
+                    
                     ScrapedDataItem.objects.create(
                         scrape=scrape,
                         title=item['title'],
                         description=item.get('description', ''),
-                        url=item.get('url', ''),
+                        url=internal_url,  # Use internal URL if available
                         downloads=item.get('downloads'),
                         likes=item.get('likes'),
                         author=item.get('author', ''),
                         tags=item.get('tags', ''),
                     )
-            except Exception:
+            except Exception as e:
+                print(f"Error updating HuggingFace scrape data: {e}")  # Log error
                 pass
 
         # Trigger a new search with the updated data (mark as retrigger)

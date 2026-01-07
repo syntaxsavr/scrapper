@@ -202,6 +202,7 @@ def scrape_detail_view(request, scrape_id):
     """View individual scrape with all results"""
     from celery.result import AsyncResult
     from datetime import timedelta
+    from django.db.models import Q
     
     scrape = get_object_or_404(UserScrape, id=scrape_id, user=request.user)  # make sure user owns it
     
@@ -234,11 +235,27 @@ def scrape_detail_view(request, scrape_id):
                     scrape.duration_seconds = (timezone.now() - scrape.started_at).total_seconds()
                 scrape.save()
     
-    # get scraped items with pagination
+    # get scraped items with search and filtering
     from django.core.paginator import Paginator
     
     items = scrape.items.all().order_by('-created_at')  # all items from this scrape, newest first
-    starred_items = items.filter(is_starred=True)  # user starred items
+    
+    # Search functionality
+    search_query = request.GET.get('search', '').strip()
+    if search_query:
+        items = items.filter(
+            Q(title__icontains=search_query) |
+            Q(description__icontains=search_query) |
+            Q(author__icontains=search_query) |
+            Q(tags__icontains=search_query)
+        )
+    
+    # Filter by starred
+    show_starred_only = request.GET.get('starred', '').lower() == 'true'
+    if show_starred_only:
+        items = items.filter(is_starred=True)
+    
+    starred_items = scrape.items.filter(is_starred=True)  # user starred items
     
     # pagination - 20 items per page
     paginator = Paginator(items, 20)
@@ -253,9 +270,12 @@ def scrape_detail_view(request, scrape_id):
         'page_obj': page_obj,
         'items': page_obj,  # for template compatibility
         'starred_items': starred_items,
-        'total_items': items.count(),
+        'total_items': scrape.items.count(),  # total without filters
+        'filtered_items': items.count(),  # total with filters
         'starred_count': starred_items.count(),
         'all_projects': all_projects,  # add projects for dropdown
+        'search_query': search_query,
+        'show_starred_only': show_starred_only,
     }
     return render(request, 'scraping/scrape_detail.html', context)
 
@@ -517,3 +537,72 @@ def update_scrape_schedule(request, scrape_id):
         'message': 'Schedule updated successfully',
         'next_run': scrape.next_run_at.isoformat() if scrape.next_run_at else None
     })
+
+
+@login_required
+def export_scrape_csv(request, scrape_id):
+    """Export scrape data as CSV"""
+    import csv
+    from django.http import HttpResponse
+    from django.db.models import Q
+    
+    scrape = get_object_or_404(UserScrape, id=scrape_id, user=request.user)
+    
+    # Get all items (apply same filters as the view if provided)
+    items = scrape.items.all().order_by('-created_at')
+    
+    # Apply search filter if provided
+    search_query = request.GET.get('search', '').strip()
+    if search_query:
+        items = items.filter(
+            Q(title__icontains=search_query) |
+            Q(description__icontains=search_query) |
+            Q(author__icontains=search_query) |
+            Q(tags__icontains=search_query)
+        )
+    
+    # Apply starred filter if provided
+    show_starred_only = request.GET.get('starred', '').lower() == 'true'
+    if show_starred_only:
+        items = items.filter(is_starred=True)
+    
+    # Create the HttpResponse object with CSV header
+    response = HttpResponse(content_type='text/csv')
+    filename = f'scrape_{scrape.id}_{scrape.query}_{timezone.now().strftime("%Y%m%d_%H%M%S")}.csv'
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    
+    # Create CSV writer
+    writer = csv.writer(response)
+    
+    # Write header row
+    writer.writerow([
+        'ID',
+        'Title',
+        'Description',
+        'URL',
+        'Author',
+        'Tags',
+        'Downloads',
+        'Likes',
+        'Is Starred',
+        'User Notes',
+        'Created At',
+    ])
+    
+    # Write data rows
+    for item in items:
+        writer.writerow([
+            item.id,
+            item.title,
+            item.description,
+            item.url,
+            item.author or '',
+            item.tags or '',
+            item.downloads if item.downloads is not None else '',
+            item.likes if item.likes is not None else '',
+            'Yes' if item.is_starred else 'No',
+            item.user_notes or '',
+            item.created_at.strftime('%Y-%m-%d %H:%M:%S') if item.created_at else '',
+        ])
+    
+    return response

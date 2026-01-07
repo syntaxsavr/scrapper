@@ -7,17 +7,62 @@
 
 .filters-form .form-row {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    gap: 15px;
+    grid-template-columns: 3fr 3fr 3fr 2fr auto;
+    gap: 20px;
     align-items: end;
+}
+
+.filters-form .form-group {
+    display: flex;
+    flex-direction: column;
 }
 
 .filters-form .form-group label {
     display: block;
-    margin-bottom: 5px;
+    margin-bottom: 8px;
     font-weight: 500;
     font-size: 0.9rem;
     color: var(--text-muted);
+    white-space: nowrap;
+}
+
+.filters-form .form-control {
+    width: 100%;
+    min-width: 180px; /* Ensure minimum width to show content */
+    padding: 10px 14px;
+    font-size: 1rem;
+    line-height: 1.5;
+    color: var(--text-color);
+    background-color: var(--background-color);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.filters-form .form-control:focus {
+    color: var(--text-color);
+    background-color: var(--background-color);
+    border-color: var(--primary-color);
+    outline: 0;
+    box-shadow: 0 0 0 0.2rem rgba(187, 134, 252, 0.25);
+}
+
+.filters-form select.form-control {
+    height: auto;
+    min-height: 42px;
+}
+
+/* Responsive adjustments for filters */
+@media (max-width: 1200px) {
+    .filters-form .form-row {
+        grid-template-columns: 1fr 1fr 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .filters-form .form-row {
+        grid-template-columns: 1fr;
+    }
 }
 
 /* Scrapes List */

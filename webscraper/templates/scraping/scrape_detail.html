@@ -169,12 +169,53 @@
             <div class="project-section">
                 <div class="section-header">
                     <h4><i class="fas fa-list"></i> Scraped Items</h4>
-                    {% if starred_count > 0 %}
-                        <div class="filter-controls">
-                            <button class="btn btn-outline-warning btn-sm" onclick="toggleStarredOnly()">
+                    <div class="filter-controls">
+                        <button class="btn btn-success btn-sm" onclick="exportToCSV()">
+                            <i class="fas fa-file-csv"></i> Export CSV
+                        </button>
+                        {% if starred_count > 0 %}
+                            <button class="btn btn-outline-warning btn-sm" id="starredFilterBtn" onclick="toggleStarredFilter()">
                                 <i class="fas fa-star"></i> Show Starred Only
                             </button>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- Search box -->
+                <div class="mb-3">
+                    <form method="get" action="" id="searchForm" class="form-inline">
+                        <div class="input-group" style="width: 100%; max-width: 500px;">
+                            <input type="text" 
+                                   name="search" 
+                                   class="form-control" 
+                                   placeholder="Search items by title, description, author, or tags..." 
+                                   value="{{ search_query }}"
+                                   id="searchInput">
+                            <div class="input-group-append">
+                                <button class="btn btn-primary" type="submit">
+                                    <i class="fas fa-search"></i> Search
+                                </button>
+                                {% if search_query %}
+                                    <a href="{% url 'scrape_detail' scrape.id %}" class="btn btn-secondary">
+                                        <i class="fas fa-times"></i> Clear
+                                    </a>
+                                {% endif %}
+                            </div>
                         </div>
+                        {% if show_starred_only %}
+                            <input type="hidden" name="starred" value="true">
+                        {% endif %}
+                    </form>
+                    {% if search_query %}
+                        <p class="text-muted mt-2 mb-0">
+                            <i class="fas fa-info-circle"></i> 
+                            Showing {{ filtered_items }} of {{ total_items }} items matching "{{ search_query }}"
+                        </p>
+                    {% elif show_starred_only %}
+                        <p class="text-muted mt-2 mb-0">
+                            <i class="fas fa-filter"></i> 
+                            Showing {{ filtered_items }} starred items
+                        </p>
                     {% endif %}
                 </div>
                 
@@ -659,5 +700,66 @@ window.onclick = function(event) {
         closeScheduleModal();
     }
 }
+
+// Export scrape data to CSV
+function exportToCSV() {
+    const searchQuery = document.getElementById('searchInput').value;
+    const showStarred = document.getElementById('starredFilterBtn') && 
+                       document.getElementById('starredFilterBtn').classList.contains('active');
+    
+    let url = `/scrapes/{{ scrape.id }}/export-csv/`;
+    const params = new URLSearchParams();
+    
+    if (searchQuery) {
+        params.append('search', searchQuery);
+    }
+    if (showStarred) {
+        params.append('starred', 'true');
+    }
+    
+    if (params.toString()) {
+        url += '?' + params.toString();
+    }
+    
+    window.location.href = url;
+}
+
+// Toggle starred filter
+function toggleStarredFilter() {
+    const btn = document.getElementById('starredFilterBtn');
+    const searchInput = document.getElementById('searchInput');
+    const currentUrl = new URL(window.location.href);
+    
+    if (btn.classList.contains('active')) {
+        // Remove filter
+        btn.classList.remove('active', 'btn-warning');
+        btn.classList.add('btn-outline-warning');
+        currentUrl.searchParams.delete('starred');
+    } else {
+        // Add filter
+        btn.classList.add('active', 'btn-warning');
+        btn.classList.remove('btn-outline-warning');
+        currentUrl.searchParams.set('starred', 'true');
+    }
+    
+    // Preserve search query
+    if (searchInput.value) {
+        currentUrl.searchParams.set('search', searchInput.value);
+    }
+    
+    // Reset to page 1 when filtering
+    currentUrl.searchParams.delete('page');
+    
+    window.location.href = currentUrl.toString();
+}
+
+// Initialize starred filter button state
+document.addEventListener('DOMContentLoaded', function() {
+    const btn = document.getElementById('starredFilterBtn');
+    if (btn && '{{ show_starred_only }}' === 'True') {
+        btn.classList.add('active', 'btn-warning');
+        btn.classList.remove('btn-outline-warning');
+    }
+});
 </script>
 {% endblock %}
