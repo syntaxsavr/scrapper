@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse
 from django.views.decorators.http import require_GET
-from .tasks import search_datasets, run_hugging_face_search_task
+from .tasks import search_datasets, run_hugging_face_search_task, scrape_kaggle_task
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth import login
 from .models import Dataset
@@ -103,4 +103,28 @@ def api_scrape_hugging_face_search(request):
         "task_id": task.id,
         "status": "started",
         "limit": limit
+    })
+
+@require_GET
+def api_scrape_kaggle_search(request):
+    query = request.GET.get("q", "")
+    if not query:
+        return JsonResponse({"error": "Query parameter 'q' is required."}, status=400)
+    
+    if len(query) > 500:
+        return JsonResponse({"error": "Query parameter 'q' is too long (max 500 characters)."}, status=400)
+    
+    limit_str = request.GET.get("limit", "200")
+
+    try:
+        limit = int(limit_str)
+    except (Exception):
+        return JsonResponse({"error": "Query parameter 'limit' must be a valid integer."}, status=400)
+
+    task = scrape_kaggle_task.delay(query,limit)
+
+    return JsonResponse({
+        "message": f"Scraping Kaggle datasets for '{query,limit}' started",
+        "task_id": task.id,
+        "status": "started"
     })
