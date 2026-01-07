@@ -19,12 +19,10 @@ def api_search(request):
     if not query:  # need something to search
         return JsonResponse({"error": "No query provided"}, status=400)
 
-    # Create user scrape record if user is authenticated
-    user_scrape_id = None
+    # Check for existing scrapes ONLY if user is authenticated
     if request.user.is_authenticated:
         from .models import UserScrape
         from django.utils import timezone
-        from django.db.models import Q
         
         # Check if user already has a scrape with the exact same query
         existing_scrape = UserScrape.objects.filter(
@@ -38,38 +36,25 @@ def api_search(request):
             if existing_scrape.started_at > one_hour_ago:
                 return JsonResponse({
                     "status": "duplicate",
-                    "message": f"You already have a scrape for '{query}' from {existing_scrape.started_at.strftime('%H:%M')}. You can rerun it from your scrapes page.",
+                    "message": f"You already have a scrape for '{query}' from {existing_scrape.started_at.strftime('%H:%M')}.",
                     "scrape_id": existing_scrape.id,
                     "existing": True
                 })
-        
-        user_scrape = UserScrape.objects.create(
-            user=request.user,
-            query=query,
-            source='hugging_face',
-            status='pending'
-        )
-        user_scrape_id = user_scrape.id
 
-    # Start both search tasks in parallel (pass user_scrape_id if exists)
-    local_task = search_datasets.delay(query, user_scrape_id)
-    hf_task = scrap_huggingface_datasets.delay(query, user_scrape_id)
+    # Start only the local search task initially (fast results)
+    # Don't create UserScrape automatically - user will choose to save later
+    local_task = search_datasets.delay(query, user_scrape_id=None)
     
-    # Store task IDs for cancellation
-    if user_scrape_id:
-        from .models import UserScrape
-        user_scrape = UserScrape.objects.get(id=user_scrape_id)
-        user_scrape.celery_task_id = hf_task.id  # Store the main task ID
-        user_scrape.save()
+    # Also start HuggingFace scraping in the background to get more results
+    # This populates the local database with new datasets
+    huggingface_task = scrap_huggingface_datasets.delay(query, user_scrape_id=None)
 
     response_data = {
-        "task_ids": [local_task.id, hf_task.id],
+        "task_ids": [local_task.id, huggingface_task.id],
         "status": "started",
         "message": f"Search started for '{query}'",
+        "is_authenticated": request.user.is_authenticated
     }
-    
-    if user_scrape_id:
-        response_data["scrape_id"] = user_scrape_id
 
     return JsonResponse(response_data)
 
@@ -105,6 +90,61 @@ def api_task_status(_, task_id):
             "status": "pending",
         })
 
+def api_create_scrape(request):
+    """Create a UserScrape from search results"""
+    if not request.user.is_authenticated:
+        return JsonResponse({"error": "Authentication required"}, status=401)
+    
+    if request.method != 'POST':
+        return JsonResponse({"error": "POST method required"}, status=405)
+    
+    import json
+    data = json.loads(request.body)
+    query = data.get('query', '').strip()
+    
+    if not query:
+        return JsonResponse({"error": "Query is required"}, status=400)
+    
+    from .models import UserScrape
+    from django.utils import timezone
+    
+    # Check if user already has this exact scrape
+    existing_scrape = UserScrape.objects.filter(
+        user=request.user,
+        query=query
+    ).order_by('-started_at').first()
+    
+    if existing_scrape:
+        # Check if it's recent (less than 5 minutes old)
+        five_minutes_ago = timezone.now() - timedelta(minutes=5)
+        if existing_scrape.started_at > five_minutes_ago:
+            return JsonResponse({
+                "status": "duplicate",
+                "message": "You already have a recent scrape for this query",
+                "scrape_id": existing_scrape.id
+            })
+    
+    # Create new user scrape
+    user_scrape = UserScrape.objects.create(
+        user=request.user,
+        query=query,
+        source='hugging_face',
+        status='pending'
+    )
+    
+    # Start the scraping task (HuggingFace scraping)
+    hf_task = scrap_huggingface_datasets.delay(query, user_scrape.id)
+    
+    # Store task ID for tracking/cancellation
+    user_scrape.celery_task_id = hf_task.id
+    user_scrape.save()
+    
+    return JsonResponse({
+        "status": "success",
+        "message": "Scrape created successfully",
+        "scrape_id": user_scrape.id,
+        "task_id": hf_task.id
+    })
 
 def login_view(request):
     if request.user.is_authenticated:  # already logged in
