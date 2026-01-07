@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block title %}Delete Payment Method{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="confirmation-container">
+        <div class="warning-header">
+            <i class="fas fa-exclamation-triangle"></i>
+            <h1>Delete Payment Method</h1>
+        </div>
+        
+        <div class="payment-preview">
+            <div class="card-display">
+                <div class="card-info">
+                    <div class="card-brand">
+                        {% if payment_method.card_type == 'visa' %}
+                            <i class="fab fa-cc-visa" style="color: #1a1f71;"></i>
+                        {% elif payment_method.card_type == 'mastercard' %}
+                            <i class="fab fa-cc-mastercard" style="color: #eb001b;"></i>
+                        {% elif payment_method.card_type == 'amex' %}
+                            <i class="fab fa-cc-amex" style="color: #006fcf;"></i>
+                        {% elif payment_method.card_type == 'discover' %}
+                            <i class="fab fa-cc-discover" style="color: #ff6000;"></i>
+                        {% elif payment_method.card_type == 'paypal' %}
+                            <i class="fab fa-cc-paypal" style="color: #003087;"></i>
+                        {% else %}
+                            <i class="far fa-credit-card"></i>
+                        {% endif %}
+                        <span class="card-type">{{ payment_method.get_card_type_display }}</span>
+                    </div>
+                    <div class="card-number">•••• •••• •••• {{ payment_method.last_four_digits }}</div>
+                    <div class="card-details">
+                        <div class="cardholder">{{ payment_method.cardholder_name }}</div>
+                        <div class="expiry">Expires {{ payment_method.expiry_month|stringformat:"02d" }}/{{ payment_method.expiry_year }}</div>
+                    </div>
+                    {% if payment_method.is_primary %}
+                        <div class="primary-indicator">
+                            <i class="fas fa-star"></i>
+                            <span>Primary Payment Method</span>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="warning-message">
+            <h3>Are you sure you want to delete this payment method?</h3>
+            <p>This action cannot be undone. The payment method will be permanently removed from your account.</p>
+            
+            {% if payment_method.is_primary %}
+                <div class="primary-warning">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <strong>Warning:</strong> This is your primary payment method. You may want to set another payment method as primary before deleting this one.
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="action-buttons">
+            <form method="post" class="delete-form">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-danger">
+                    <i class="fas fa-trash-alt"></i>
+                    Yes, Delete Payment Method
+                </button>
+            </form>
+            <a href="{% url 'payment_methods' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i>
+                Cancel
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

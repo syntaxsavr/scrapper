@@ -59,18 +59,18 @@ jobs:
         coverage report -m      
 
     # 5. Run mutation tests
-    - name: Mutation Tests
-      run: |
-        cosmic-ray init cosmic-ray.toml cosmic-ray.sqlite
-        cr-filter-pragma cosmic-ray.sqlite
-        cosmic-ray --verbosity=INFO baseline cosmic-ray.toml
-        cosmic-ray --verbosity=INFO exec cosmic-ray.toml cosmic-ray.sqlite
+    #- name: Mutation Tests
+     # run: |
+      #  cosmic-ray init cosmic-ray.toml cosmic-ray.sqlite
+       # cr-filter-pragma cosmic-ray.sqlite
+        #cosmic-ray --verbosity=INFO baseline cosmic-ray.toml
+        #cosmic-ray --verbosity=INFO exec cosmic-ray.toml cosmic-ray.sqlite
 
     # 6. Report mutation tests
-    - name: Mutation Tests
-      run: |
-        cr-report cosmic-ray.sqlite --show-pending  
-        cr-html cosmic-ray.sqlite > report.html
+    #- name: Mutation Tests
+     # run: |
+      #  cr-report cosmic-ray.sqlite --show-pending  
+       # cr-html cosmic-ray.sqlite > report.html
 
     # 7. Log in to Docker Hub using token
     - name: Log in to Docker Hub

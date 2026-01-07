@@ -1,24 +1,28 @@
 {% extends "base.html" %}
 {% load static %}
+
+{% block extra_js %}
+<script src="{% static 'js/search.js' %}"></script>
+{% endblock %}
+
 {% block content %}
-<div class="navbar">
-    <div class="nav-left">
-        <h2><a href="{% url 'home' %}">Web Scraper</a></h2>
-    </div>
-    <div class="nav-right">
-        {% if user.is_authenticated %}
-            <span class="welcome-text">Welcome, {{ user.username }}</span>
-            <form method="post" action="{% url 'logout' %}" class="logout-form">
-                {% csrf_token %}
-                <button type="submit" class="btn logout-btn">Logout</button>
-            </form>
-        {% else %}
-            <a href="{% url 'login' %}" class="btn">Login</a>
-            <a href="{% url 'signup' %}" class="btn btn-primary">Sign Up</a>
-        {% endif %}
+<!-- Hero Section for Non-Logged-In Users -->
+{% if not user.is_authenticated %}
+<div class="hero-section">
+    <div class="hero-content">
+        <h1 class="hero-title">Search & Manage HuggingFace Datasets</h1>
+        <p class="hero-subtitle">
+            Track, organize, and schedule your dataset scrapes with a powerful dashboard.
+        </p>
+        <div class="hero-cta">
+            <a href="{% url 'signup' %}" class="btn btn-hero btn-primary">Sign Up Free</a>
+            <a href="{% url 'login' %}" class="btn btn-hero btn-secondary">Login</a>
+        </div>
     </div>
 </div>
+{% endif %}
 
+<!-- main search area (the heart of our scraper!) -->
 <div class="search-container">
     <form id="search-form">
         <input type="text" name="search" id="search-input" placeholder="Search datasets...">
@@ -26,7 +30,201 @@
     </form>
 </div>
 
-<div id="results-container"></div>
+<!-- Results container with better styling -->
+<div id="results-container" class="results-wrapper"></div>
 
-<script src="{% static 'js/search.js' %}"></script>
+<style>
+/* Results wrapper styling */
+.results-wrapper {
+    margin-top: 30px;
+}
+
+.results-wrapper .content {
+    background: var(--card-background);
+    border-radius: 12px;
+    padding: 25px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    border: 1px solid var(--border-color);
+}
+
+/* Search filter inside results */
+.results-filter {
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid var(--border-color);
+}
+
+.results-filter input {
+    width: 100%;
+    max-width: 400px;
+    padding: 10px 15px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    font-size: 14px;
+    transition: border-color 0.3s;
+}
+
+.results-filter input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(187, 134, 252, 0.1);
+}
+
+/* Scrollable results list */
+.results-list {
+    max-height: 600px;
+    overflow-y: auto;
+    padding-right: 10px;
+}
+
+/* Custom scrollbar */
+.results-list::-webkit-scrollbar {
+    width: 8px;
+}
+
+.results-list::-webkit-scrollbar-track {
+    background: var(--background-color);
+    border-radius: 10px;
+}
+
+.results-list::-webkit-scrollbar-thumb {
+    background: var(--primary-color);
+    border-radius: 10px;
+}
+
+.results-list::-webkit-scrollbar-thumb:hover {
+    background: #9a4fff;
+}
+
+/* Result item styling */
+.result-link {
+    text-decoration: none;
+    color: inherit;
+    display: block;
+    margin-bottom: 15px;
+}
+
+.result-item {
+    background: var(--background-color);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 20px;
+    transition: all 0.3s;
+    cursor: pointer;
+}
+
+.result-item:hover {
+    border-color: var(--primary-color);
+    box-shadow: 0 4px 12px rgba(187, 134, 252, 0.3);
+    transform: translateY(-2px);
+}
+
+.result-item h3 {
+    color: var(--primary-color);
+    margin: 0 0 10px 0;
+    font-size: 1.2rem;
+    font-weight: 600;
+}
+
+.result-item p {
+    color: var(--text-muted);
+    margin: 0 0 10px 0;
+    line-height: 1.6;
+    font-size: 0.95rem;
+}
+
+.result-item .result-meta {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border-color);
+}
+
+.result-item .result-meta span {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.result-item .result-meta i {
+    color: var(--primary-color);
+}
+
+.result-item .result-tags {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 10px;
+}
+
+.result-item .tag {
+    background: var(--primary-color);
+    color: white;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+/* Results header */
+.results-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.results-header h2 {
+    margin: 0;
+    color: var(--text-color);
+    font-size: 1.5rem;
+}
+
+.results-stats {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+}
+
+/* Loading spinner */
+.loading-spinner {
+    text-align: center;
+    padding: 60px 20px;
+}
+
+.loading-spinner i {
+    font-size: 48px;
+    color: var(--primary-color);
+}
+
+/* Animation */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* No results message */
+.no-results {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text-muted);
+}
+
+.no-results i {
+    font-size: 64px;
+    margin-bottom: 20px;
+    opacity: 0.5;
+}
+</style>
 {% endblock %}

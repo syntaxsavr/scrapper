@@ -35,7 +35,8 @@ class ScrapHuggingfaceDatasetsTests(TestCase):
 
         self.assertEqual(Dataset.objects.count(), 2)
         existing = Dataset.objects.get(title="existing_dataset")
-        self.assertEqual(existing.description, "old description")
+        # Dataset is now updated with new description from HuggingFace
+        self.assertEqual(existing.description, "new description")
 
     @patch('webscraper.tasks.search_datasets.delay')
     @patch('webscraper.tasks.fetch_huggingface_datasets')
@@ -45,7 +46,8 @@ class ScrapHuggingfaceDatasetsTests(TestCase):
 
         scrap_huggingface_datasets("test query")
 
-        mock_fetch.assert_called_once_with(query="test query", limit=50)
+        # Limit is now 100 as per updated implementation
+        mock_fetch.assert_called_once_with(query="test query", limit=100)
 
     @patch('webscraper.tasks.search_datasets.delay')
     @patch('webscraper.tasks.fetch_huggingface_datasets')
@@ -55,7 +57,8 @@ class ScrapHuggingfaceDatasetsTests(TestCase):
 
         scrap_huggingface_datasets("python datasets")
 
-        mock_search_delay.assert_called_once_with("python datasets")
+        # Now includes user_scrape_id=None and is_retrigger=True
+        mock_search_delay.assert_called_once_with("python datasets", None, is_retrigger=True)
 
     @patch('webscraper.tasks.search_datasets.delay')
     @patch('webscraper.tasks.fetch_huggingface_datasets')
