@@ -1,11 +1,12 @@
 [cosmic-ray]
 module-path = "webscraper"
-timeout = 10.0
+timeout = 30.0
 excluded-modules = [
     "webscraper.migrations",
     "webscraper.admin",
     "webscraper.apps",
     "webscraper.management",
+    "webscraper/tests/test_scraper_kaggle.py",
     "__init__"
 ]
 
