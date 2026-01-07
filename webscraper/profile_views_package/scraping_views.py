@@ -109,6 +109,14 @@ def edit_project_view(request, project_id):
     project = get_object_or_404(ScrapingProject, id=project_id, user=request.user)  # make sure user owns it
     
     if request.method == 'POST':  # form submitted
+        # Check if this is a delete request
+        if 'delete_project' in request.POST:
+            project_name = project.name
+            project.delete()  # This will cascade delete all related scrapes
+            messages.success(request, f'Project "{project_name}" has been deleted.')
+            return redirect('projects')
+        
+        # Otherwise, handle regular edit
         form = ScrapingProjectForm(request.POST, instance=project)
         if form.is_valid():
             form.save()  # update project
@@ -124,7 +132,43 @@ def edit_project_view(request, project_id):
 @login_required
 def scrapes_view(request):
     """List all user's scrapes with filtering"""
+    from celery.result import AsyncResult
+    from datetime import timedelta
+    
     scrapes = UserScrape.objects.filter(user=request.user)  # get user scrapes
+    
+    # Auto-fix stuck scrapes - check if they're really running
+    stuck_threshold = timezone.now() - timedelta(minutes=30)
+    potentially_stuck = scrapes.filter(
+        status__in=['running', 'pending'],
+        started_at__lt=stuck_threshold
+    )
+    
+    for scrape in potentially_stuck:
+        # Check if the celery task is actually still running
+        if scrape.celery_task_id:
+            task = AsyncResult(scrape.celery_task_id)
+            if task.ready():  # Task is done
+                if task.successful():
+                    scrape.status = 'completed'
+                    scrape.completed_at = timezone.now()
+                    if scrape.started_at:
+                        scrape.duration_seconds = (timezone.now() - scrape.started_at).total_seconds()
+                else:
+                    scrape.status = 'failed'
+                    scrape.error_message = 'Task failed or was lost'
+                    scrape.completed_at = timezone.now()
+                    if scrape.started_at:
+                        scrape.duration_seconds = (timezone.now() - scrape.started_at).total_seconds()
+                scrape.save()
+        else:
+            # No task ID, must be stuck
+            scrape.status = 'failed'
+            scrape.error_message = 'Task was lost (no task ID)'
+            scrape.completed_at = timezone.now()
+            if scrape.started_at:
+                scrape.duration_seconds = (timezone.now() - scrape.started_at).total_seconds()
+            scrape.save()
     
     # filtering options
     status_filter = request.GET.get('status')  # filter by status
@@ -156,7 +200,39 @@ def scrapes_view(request):
 @login_required
 def scrape_detail_view(request, scrape_id):
     """View individual scrape with all results"""
+    from celery.result import AsyncResult
+    from datetime import timedelta
+    
     scrape = get_object_or_404(UserScrape, id=scrape_id, user=request.user)  # make sure user owns it
+    
+    # Auto-fix if scrape is stuck
+    if scrape.status in ['running', 'pending']:
+        stuck_threshold = timezone.now() - timedelta(minutes=30)
+        if scrape.started_at < stuck_threshold:
+            # Check if the celery task is actually still running
+            if scrape.celery_task_id:
+                task = AsyncResult(scrape.celery_task_id)
+                if task.ready():  # Task is done
+                    if task.successful():
+                        scrape.status = 'completed'
+                        scrape.completed_at = timezone.now()
+                        if scrape.started_at:
+                            scrape.duration_seconds = (timezone.now() - scrape.started_at).total_seconds()
+                    else:
+                        scrape.status = 'failed'
+                        scrape.error_message = 'Task failed or was lost'
+                        scrape.completed_at = timezone.now()
+                        if scrape.started_at:
+                            scrape.duration_seconds = (timezone.now() - scrape.started_at).total_seconds()
+                    scrape.save()
+            else:
+                # No task ID, must be stuck
+                scrape.status = 'failed'
+                scrape.error_message = 'Task was lost (no task ID)'
+                scrape.completed_at = timezone.now()
+                if scrape.started_at:
+                    scrape.duration_seconds = (timezone.now() - scrape.started_at).total_seconds()
+                scrape.save()
     
     # get scraped items with pagination
     from django.core.paginator import Paginator
@@ -322,3 +398,122 @@ def delete_scrape(request, scrape_id):
         return redirect('scrapes')
     
     return redirect('edit_scrape', scrape_id=scrape_id)
+
+
+@login_required
+def cancel_scrape(request, scrape_id):
+    """Cancel a running scrape"""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'POST method required'}, status=405)
+    
+    scrape = get_object_or_404(UserScrape, id=scrape_id, user=request.user)
+    
+    # Only cancel if it's running or pending
+    if scrape.status not in ['running', 'pending']:
+        return JsonResponse({
+            'success': False,
+            'message': f'Cannot cancel scrape with status: {scrape.status}'
+        })
+    
+    # Cancel the celery task if we have a task ID
+    if scrape.celery_task_id:
+        from celery import current_app
+        current_app.control.revoke(scrape.celery_task_id, terminate=True)
+    
+    # Update scrape status
+    scrape.status = 'cancelled'
+    scrape.completed_at = timezone.now()
+    if scrape.started_at:
+        scrape.duration_seconds = (timezone.now() - scrape.started_at).total_seconds()
+    scrape.save()
+    
+    return JsonResponse({
+        'success': True,
+        'message': 'Scrape cancelled successfully'
+    })
+
+
+@login_required
+def rerun_scrape(request, scrape_id):
+    """Rerun an existing scrape with the same query"""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'POST method required'}, status=405)
+    
+    scrape = get_object_or_404(UserScrape, id=scrape_id, user=request.user)
+    
+    # Create a new scrape with the same query and settings
+    from ..tasks import search_datasets, scrap_huggingface_datasets
+    
+    new_scrape = UserScrape.objects.create(
+        user=request.user,
+        project=scrape.project,
+        query=scrape.query,
+        source=scrape.source,
+        status='pending',
+        schedule_frequency=scrape.schedule_frequency,
+        is_scheduled_active=scrape.is_scheduled_active,
+    )
+    
+    # Start the scraping tasks
+    local_task = search_datasets.delay(scrape.query, new_scrape.id)
+    hf_task = scrap_huggingface_datasets.delay(scrape.query, new_scrape.id)
+    
+    # Store task ID
+    new_scrape.celery_task_id = hf_task.id
+    new_scrape.save()
+    
+    return JsonResponse({
+        'success': True,
+        'message': 'Scrape started successfully',
+        'scrape_id': new_scrape.id,
+        'task_ids': [local_task.id, hf_task.id]
+    })
+
+
+@login_required
+def update_scrape_schedule(request, scrape_id):
+    """Update the schedule settings for a scrape"""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'POST method required'}, status=405)
+    
+    scrape = get_object_or_404(UserScrape, id=scrape_id, user=request.user)
+    
+    frequency = request.POST.get('frequency', 'none')
+    is_active = request.POST.get('is_active', 'false').lower() == 'true'
+    
+    # Validate frequency
+    valid_frequencies = [choice[0] for choice in UserScrape.SCHEDULE_CHOICES]
+    if frequency not in valid_frequencies:
+        return JsonResponse({
+            'success': False,
+            'message': 'Invalid frequency'
+        })
+    
+    scrape.schedule_frequency = frequency
+    scrape.is_scheduled_active = is_active
+    
+    # Calculate next run time if activating
+    if is_active and frequency != 'none':
+        from datetime import timedelta
+        
+        now = timezone.now()
+        if frequency == 'hourly':
+            scrape.next_run_at = now + timedelta(hours=1)
+        elif frequency == 'daily':
+            scrape.next_run_at = now + timedelta(days=1)
+        elif frequency == 'weekly':
+            scrape.next_run_at = now + timedelta(weeks=1)
+        elif frequency == 'monthly':
+            scrape.next_run_at = now + timedelta(days=30)
+        
+        scrape.last_run_at = now
+    else:
+        scrape.next_run_at = None
+    
+    scrape.save()
+    
+    return JsonResponse({
+        'success': True,
+        'message': 'Schedule updated successfully',
+        'next_run': scrape.next_run_at.isoformat() if scrape.next_run_at else None
+    })

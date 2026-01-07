@@ -7,6 +7,7 @@ from django.contrib.auth import login
 from .models import Dataset
 from .forms import CustomUserCreationForm  # signup form
 from celery.result import AsyncResult
+from datetime import timedelta
 
 def home_view(request):
     # simple home view - profile context handled by context processor now
@@ -23,6 +24,24 @@ def api_search(request):
     if request.user.is_authenticated:
         from .models import UserScrape
         from django.utils import timezone
+        from django.db.models import Q
+        
+        # Check if user already has a scrape with the exact same query
+        existing_scrape = UserScrape.objects.filter(
+            user=request.user,
+            query=query
+        ).order_by('-started_at').first()
+        
+        if existing_scrape:
+            # If there's a recent scrape (less than 1 hour old), suggest rerunning
+            one_hour_ago = timezone.now() - timedelta(hours=1)
+            if existing_scrape.started_at > one_hour_ago:
+                return JsonResponse({
+                    "status": "duplicate",
+                    "message": f"You already have a scrape for '{query}' from {existing_scrape.started_at.strftime('%H:%M')}. You can rerun it from your scrapes page.",
+                    "scrape_id": existing_scrape.id,
+                    "existing": True
+                })
         
         user_scrape = UserScrape.objects.create(
             user=request.user,
@@ -35,6 +54,13 @@ def api_search(request):
     # Start both search tasks in parallel (pass user_scrape_id if exists)
     local_task = search_datasets.delay(query, user_scrape_id)
     hf_task = scrap_huggingface_datasets.delay(query, user_scrape_id)
+    
+    # Store task IDs for cancellation
+    if user_scrape_id:
+        from .models import UserScrape
+        user_scrape = UserScrape.objects.get(id=user_scrape_id)
+        user_scrape.celery_task_id = hf_task.id  # Store the main task ID
+        user_scrape.save()
 
     response_data = {
         "task_ids": [local_task.id, hf_task.id],

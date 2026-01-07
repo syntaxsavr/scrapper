@@ -134,6 +134,14 @@ class UserScrape(models.Model):
         ('cancelled', 'Cancelled'),
     ]
     
+    SCHEDULE_CHOICES = [
+        ('none', 'No Schedule'),
+        ('hourly', 'Every Hour'),
+        ('daily', 'Daily'),
+        ('weekly', 'Weekly'),
+        ('monthly', 'Monthly'),
+    ]
+    
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='scrapes')  # who scraped
     project = models.ForeignKey(ScrapingProject, on_delete=models.CASCADE, related_name='scrapes', null=True, blank=True)  # which project
     
@@ -141,6 +149,15 @@ class UserScrape(models.Model):
     query = models.CharField(max_length=500)  # what they searched for
     source = models.CharField(max_length=100, default='hugging_face')  # where scraped from
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')  # current state
+    
+    # celery task tracking for cancellation
+    celery_task_id = models.CharField(max_length=255, blank=True, null=True)  # track running task
+    
+    # scheduling for automatic reruns
+    schedule_frequency = models.CharField(max_length=20, choices=SCHEDULE_CHOICES, default='none')  # how often to rerun
+    last_run_at = models.DateTimeField(null=True, blank=True)  # when last auto-run
+    next_run_at = models.DateTimeField(null=True, blank=True)  # when next scheduled run
+    is_scheduled_active = models.BooleanField(default=False)  # is scheduling enabled
     
     # results and stats
     results_count = models.IntegerField(default=0)  # how many results found

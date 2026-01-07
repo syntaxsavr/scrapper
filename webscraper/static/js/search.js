@@ -33,6 +33,26 @@ document.addEventListener('DOMContentLoaded', function() {
                 return response.json();
             })
             .then(data => {
+                // Check if this is a duplicate scrape
+                if (data.status === 'duplicate' && data.existing) {
+                    resultsContainer.innerHTML =
+                        '<div class="content">' +
+                        '<div style="background: #fff3cd; border: 1px solid #ffc107; padding: 20px; border-radius: 8px; margin: 20px 0;">' +
+                        '<h3 style="color: #856404; margin-top: 0;"><i class="fas fa-exclamation-triangle"></i> Duplicate Search</h3>' +
+                        '<p style="color: #856404;">' + escapeHtml(data.message) + '</p>' +
+                        '<div style="margin-top: 15px;">' +
+                        '<a href="/scrapes/' + data.scrape_id + '/" class="btn btn-primary" style="text-decoration: none; display: inline-block; padding: 10px 20px; background: #007bff; color: white; border-radius: 4px;">' +
+                        '<i class="fas fa-eye"></i> View Existing Scrape' +
+                        '</a>' +
+                        '<button onclick="location.reload()" class="btn btn-secondary" style="margin-left: 10px; padding: 10px 20px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer;">' +
+                        '<i class="fas fa-redo"></i> Search Again Anyway' +
+                        '</button>' +
+                        '</div>' +
+                        '</div>' +
+                        '</div>';
+                    return;
+                }
+                
                 const taskIds = data.task_ids;
                 const primaryTaskId = taskIds[0];
                 console.log('Search tasks started:', taskIds);

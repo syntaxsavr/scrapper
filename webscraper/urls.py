@@ -39,6 +39,9 @@ urlpatterns = [
     path("api/scrapes/<int:scrape_id>/bookmark/", scraping_views.toggle_bookmark_api, name="toggle_bookmark"),  # bookmark toggle
     path("api/items/<int:item_id>/star/", scraping_views.toggle_star_api, name="toggle_star"),  # star toggle
     path("api/scrapes/<int:scrape_id>/add-to-project/", scraping_views.add_scrape_to_project, name="add_scrape_to_project"),  # project management
+    path("api/scrapes/<int:scrape_id>/cancel/", scraping_views.cancel_scrape, name="cancel_scrape"),  # cancel running scrape
+    path("api/scrapes/<int:scrape_id>/rerun/", scraping_views.rerun_scrape, name="rerun_scrape"),  # rerun scrape
+    path("api/scrapes/<int:scrape_id>/schedule/", scraping_views.update_scrape_schedule, name="update_scrape_schedule"),  # update schedule
 
     # API URLs - background tasks
     path("api/search/", views.api_search, name="api_search"),  # start search

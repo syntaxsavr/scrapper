@@ -106,49 +106,26 @@
                         <a href="{% url 'project_detail' project.id %}" class="btn btn-secondary">
                             <i class="fas fa-times"></i> Cancel
                         </a>
-                        
-                        <!-- danger zone - delete project -->
-                        <div class="danger-zone mt-4">
-                            <h6 class="text-danger">
-                                <i class="fas fa-exclamation-triangle"></i> Danger Zone
-                            </h6>
-                            <p class="text-muted small">
-                                Deleting this project will remove all associated scrapes and data. This cannot be undone.
-                            </p>
-                            <button type="button" class="btn btn-outline-danger btn-sm" 
-                                    onclick="confirmDelete()">
-                                <i class="fas fa-trash"></i> Delete Project
-                            </button>
-                        </div>
                     </div>
                 </form>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- delete confirmation modal -->
-<div class="modal fade" id="deleteModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Delete Project</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <p>Are you sure you want to delete the project "{{ project.name }}"?</p>
-                <p class="text-danger">
-                    <strong>This will permanently delete all scrapes and data in this project.</strong>
-                </p>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <form method="post" style="display: inline;" 
-                      action="{% url 'projects' %}" id="deleteForm">
-                    {% csrf_token %}
-                    <input type="hidden" name="delete_project" value="{{ project.id }}">
-                    <button type="submit" class="btn btn-danger">Delete Project</button>
-                </form>
+                
+                <!-- danger zone - delete project (outside main form) -->
+                <div class="danger-zone mt-4">
+                    <h6 class="text-danger">
+                        <i class="fas fa-exclamation-triangle"></i> Danger Zone
+                    </h6>
+                    <p class="text-muted small">
+                        Deleting this project will remove all associated scrapes and data. This cannot be undone.
+                    </p>
+                    <form method="post" id="deleteForm" style="display: inline;">
+                        {% csrf_token %}
+                        <input type="hidden" name="delete_project" value="1">
+                        <button type="button" class="btn btn-outline-danger btn-sm" 
+                                onclick="confirmDelete()">
+                            <i class="fas fa-trash"></i> Delete Project
+                        </button>
+                    </form>
+                </div>
             </div>
         </div>
     </div>
@@ -156,9 +133,9 @@
 
 <script>
 function confirmDelete() {
-    // show the delete confirmation modal
-    var deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
-    deleteModal.show();
+    if (confirm('Are you sure you want to delete the project "{{ project.name }}"?\n\nThis will permanently delete all scrapes and data in this project. This action cannot be undone.')) {
+        document.getElementById('deleteForm').submit();
+    }
 }
 </script>
 {% endblock %}
