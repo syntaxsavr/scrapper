@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import JsonResponse
-from django.db.models import Count, Q, Avg
+from django.db.models import Count, Q, Avg, Sum
 from django.utils import timezone
 from datetime import timedelta
 from ..models import UserScrape, ScrapingProject, ScrapedDataItem  # scraping models
@@ -78,17 +78,24 @@ def project_detail_view(request, project_id):
     """View individual project with its scrapes"""
     project = get_object_or_404(ScrapingProject, id=project_id, user=request.user)  # make sure user owns it
     
-    # get project scrapes with pagination maybe
-    scrapes = project.scrapes.all()  # get all scrapes in this project
+    # get all scrapes for this project
+    all_scrapes = project.scrapes.all()
+    
+    # get recent 10 scrapes for display
+    recent_scrapes = all_scrapes[:10]
     
     # project stats
-    total_scrapes = scrapes.count()
-    total_results = ScrapedDataItem.objects.filter(scrape__in=scrapes).count()
-    avg_results = scrapes.filter(status='completed').aggregate(avg=Avg('results_count'))['avg'] or 0
+    total_scrapes = all_scrapes.count()
+    
+    # Sum up the results_count from all completed scrapes
+    total_results = all_scrapes.filter(status='completed').aggregate(total=Sum('results_count'))['total'] or 0
+    
+    # Average results per completed scrape
+    avg_results = all_scrapes.filter(status='completed').aggregate(avg=Avg('results_count'))['avg'] or 0
     
     context = {
         'project': project,
-        'scrapes': scrapes,
+        'scrapes': recent_scrapes,
         'total_scrapes': total_scrapes,
         'total_results': total_results,
         'avg_results': round(avg_results, 1),
