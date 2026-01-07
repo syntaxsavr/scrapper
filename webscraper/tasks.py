@@ -51,8 +51,6 @@ def scrape_kaggle_task(self, query: str, limit: int):
             if not Dataset.objects.filter(title=item["title"]).exists():
                 Dataset.objects.create(title=item["title"], description=item["link"])
                 added_count += 1
-        print("Added ")
-        print(added_count)
         return {
             "query": query,
             "total_scraped": len(results),

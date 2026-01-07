@@ -1,4 +1,5 @@
 from scrapers.kaggle.scraper_kaggle import KaggleScraperSelenium
+from webscraper.tasks import scrape_kaggle_task
 
 from unittest.mock import patch, MagicMock
 from django.test import TestCase
@@ -58,6 +59,13 @@ class ScraperKaggleTests(TestCase):
             self.assertEqual(results[14]["thumbnail"], "https://storage.googleapis.com/kaggle-datasets-images/new-version-temp-images/default-backgrounds-61.png-21177671/dataset-thumbnail.png")
             self.assertEqual(results[14]["title"], "DATA_pcb")
             self.assertEqual(results[14]["date"], "Mon Dec 08 2025 12:52:39 GMT+0100 (Central European Standard Time)")
+    
+    def test_parse3(self):
+         with open("webscraper/tests/kaggle_test3.html", encoding="utf-8") as file:
+            results=[]
+            self.scraper.parse_datasets(file.read(),results)
+            file.close()
+            self.assertEqual(len(results), 0)
 
     def test_parse_pages1(self):
          with open("webscraper/tests/kaggle_test1.html", encoding="utf-8") as file:
@@ -70,6 +78,12 @@ class ScraperKaggleTests(TestCase):
             length = self.scraper.parse_num_of_pages(file.read())
             file.close()
             self.assertEqual(length, 1)
+    
+    def test_parse_pages3(self):
+         with open("webscraper/tests/kaggle_test3.html", encoding="utf-8") as file:
+            length = self.scraper.parse_num_of_pages(file.read())
+            file.close()
+            self.assertEqual(length, 0)
 
     def test_scrape1(self):
          with open("webscraper/tests/kaggle_test1.html", encoding="utf-8") as file:
@@ -114,3 +128,57 @@ class ScraperKaggleTests(TestCase):
             self.assertEqual(len(results), 0)
             results = self.scraper.scrape("test1_lim0", -1)
             self.assertEqual(len(results), 15)
+    
+    def test_scrape3(self):
+         with open("webscraper/tests/kaggle_test3.html", encoding="utf-8") as file:
+            results = []
+            html = file.read()
+            file.close()
+            self.scraper.fetch_page = MagicMock(return_value=html)
+
+            mock_driver = MagicMock()
+            mock_driver.page_source = html
+            self.scraper.driver = mock_driver
+
+            self.scraper.click_next_button = MagicMock(return_value=True)
+            
+            results = self.scraper.scrape("test2_lim200", 200)
+            self.assertEqual(len(results), 0)
+            results = self.scraper.scrape("test1_lim1000", 10)
+            self.assertEqual(len(results), 0)
+            results = self.scraper.scrape("test1_lim0", 0)
+            self.assertEqual(len(results), 0)
+            results = self.scraper.scrape("test1_lim0", -1)
+            self.assertEqual(len(results), 0)
+
+    @patch("webscraper.tasks.KaggleScraperSelenium")
+    def test_scraper_task(self, mock_scraper_class):
+         with open("webscraper/tests/kaggle_test1.html", encoding="utf-8") as file:
+            results = []
+            html = file.read()
+            file.close()
+            self.scraper.fetch_page = MagicMock(return_value=html)
+
+            mock_driver = MagicMock()
+            mock_driver.page_source = html
+            self.scraper.driver = mock_driver
+
+            self.scraper.click_next_button = MagicMock(return_value=True)
+
+            mock_scraper_class.return_value = self.scraper
+            
+            # we loop over the same 20 items over and over thus only 20 added
+            results = scrape_kaggle_task("test1_lim200", 200)
+            self.assertEqual(results["query"], "test1_lim200")
+            self.assertEqual(results["total_scraped"], 200)
+            self.assertEqual(results["added"], 20)
+            # added should be 0 because we try to add the same stuff again
+            results = scrape_kaggle_task("test1_lim10", 10)
+            self.assertEqual(results["query"], "test1_lim10")
+            self.assertEqual(results["total_scraped"], 10)
+            self.assertEqual(results["added"], 0)
+
+            results = scrape_kaggle_task("test1_lim10", -1)
+            self.assertEqual(results["query"], "test1_lim10")
+            self.assertEqual(results["total_scraped"], 200)
+            self.assertEqual(results["added"], 0)
