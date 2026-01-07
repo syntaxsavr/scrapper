@@ -1,7 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse
-from django.views.decorators.http import require_GET
-from .tasks import search_datasets, scrap_huggingface_datasets, scrape_kaggle_task
+from .tasks import search_datasets, scrap_huggingface_datasets
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth import login
 from .models import Dataset
