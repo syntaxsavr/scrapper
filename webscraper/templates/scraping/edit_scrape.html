@@ -1,0 +1,243 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Edit Scrape - {{ scrape.query }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" type="text/css" href="{% static 'css/scraping.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <!-- edit header -->
+            <div class="scraping-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h2>
+                        <i class="fas fa-edit"></i> 
+                        Edit Scrape: "{{ scrape.query }}"
+                    </h2>
+                    <a href="{% url 'scrape_detail' scrape.id %}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Back to Scrape
+                    </a>
+                </div>
+            </div>
+
+            <!-- edit form -->
+            <div class="form-card">
+                <form method="post" novalidate>
+                    {% csrf_token %}
+                    
+                    <!-- search query (readonly) -->
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="fas fa-search"></i> Search Query
+                        </label>
+                        <input type="text" class="form-control" value="{{ scrape.query }}" readonly>
+                        <small class="form-text text-muted">The original search query cannot be modified</small>
+                    </div>
+
+                    <!-- project assignment -->
+                    <div class="form-group">
+                        <label for="{{ form.project.id_for_label }}" class="form-label">
+                            <i class="fas fa-folder"></i> Assign to Project
+                        </label>
+                        {{ form.project }}
+                        <small class="form-text text-muted">Organize this scrape under a project</small>
+                        {% if form.project.errors %}
+                            <div class="text-danger mt-1">
+                                {% for error in form.project.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- notes -->
+                    <div class="form-group">
+                        <label for="{{ form.notes.id_for_label }}" class="form-label">
+                            <i class="fas fa-sticky-note"></i> Notes
+                        </label>
+                        {{ form.notes }}
+                        <small class="form-text text-muted">Add your thoughts, observations, or context about this scrape</small>
+                        {% if form.notes.errors %}
+                            <div class="text-danger mt-1">
+                                {% for error in form.notes.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- tags -->
+                    <div class="form-group">
+                        <label for="{{ form.tags.id_for_label }}" class="form-label">
+                            <i class="fas fa-tags"></i> Tags
+                        </label>
+                        {{ form.tags }}
+                        <small class="form-text text-muted">Comma-separated tags for easy filtering (e.g. "research, important, follow-up")</small>
+                        {% if form.tags.errors %}
+                            <div class="text-danger mt-1">
+                                {% for error in form.tags.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- bookmark checkbox -->
+                    <div class="form-group">
+                        <div class="form-check">
+                            {{ form.is_bookmarked }}
+                            <label for="{{ form.is_bookmarked.id_for_label }}" class="form-check-label">
+                                <i class="fas fa-bookmark"></i> Bookmark this scrape for quick access
+                            </label>
+                        </div>
+                        {% if form.is_bookmarked.errors %}
+                            <div class="text-danger mt-1">
+                                {% for error in form.is_bookmarked.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- scrape info display -->
+                    <div class="info-section">
+                        <h6><i class="fas fa-info-circle"></i> Scrape Information</h6>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="info-item">
+                                    <strong>Status:</strong>
+                                    <span class="status-badge status-{{ scrape.status }}">
+                                        {{ scrape.get_status_display }}
+                                    </span>
+                                </div>
+                                <div class="info-item">
+                                    <strong>Started:</strong> {{ scrape.started_at|date:"M j, Y g:i A" }}
+                                </div>
+                                {% if scrape.completed_at %}
+                                    <div class="info-item">
+                                        <strong>Completed:</strong> {{ scrape.completed_at|date:"M j, Y g:i A" }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                {% if scrape.results_count %}
+                                    <div class="info-item">
+                                        <strong>Results:</strong> {{ scrape.results_count }} items found
+                                    </div>
+                                {% endif %}
+                                {% if scrape.duration %}
+                                    <div class="info-item">
+                                        <strong>Duration:</strong> {{ scrape.duration|floatformat:1 }} seconds
+                                    </div>
+                                {% endif %}
+                                {% if scrape.celery_task_id %}
+                                    <div class="info-item">
+                                        <strong>Task ID:</strong> 
+                                        <code class="small">{{ scrape.celery_task_id|truncatechars:12 }}...</code>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- form buttons -->
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Save Changes
+                        </button>
+                        <a href="{% url 'scrape_detail' scrape.id %}" class="btn btn-secondary">
+                            <i class="fas fa-times"></i> Cancel
+                        </a>
+                        
+                        <!-- additional actions -->
+                        <div class="additional-actions">
+                            <a href="{% url 'scrapes' %}" class="btn btn-outline-info btn-sm">
+                                <i class="fas fa-list"></i> View All Scrapes
+                            </a>
+                            {% if scrape.project %}
+                                <a href="{% url 'project_detail' scrape.project.id %}" class="btn btn-outline-info btn-sm">
+                                    <i class="fas fa-folder"></i> View Project
+                                </a>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- danger zone - delete scrape -->
+                        <div class="danger-zone mt-4">
+                            <h6 class="text-danger">
+                                <i class="fas fa-exclamation-triangle"></i> Danger Zone
+                            </h6>
+                            <p class="text-muted small">
+                                Deleting this scrape will permanently remove all associated data and results.
+                            </p>
+                            <button type="button" class="btn btn-outline-danger btn-sm" 
+                                    onclick="confirmDelete()">
+                                <i class="fas fa-trash"></i> Delete Scrape
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- delete confirmation modal -->
+<div class="modal-overlay" id="deleteModal" style="display: none;">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Delete Scrape</h5>
+                <button type="button" class="modal-close" onclick="closeDeleteModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete this scrape?</p>
+                <p><strong>Query:</strong> "{{ scrape.query }}"</p>
+                {% if scrape.results_count %}
+                    <p style="color: #dc3545;">
+                        <strong>This will permanently delete {{ scrape.results_count }} scraped items.</strong>
+                    </p>
+                {% endif %}
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeDeleteModal()">Cancel</button>
+                <form method="post" style="display: inline;" 
+                      action="{% url 'delete_scrape' scrape.id %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">Delete Scrape</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function confirmDelete() {
+    document.getElementById('deleteModal').style.display = 'flex';
+}
+
+function closeDeleteModal() {
+    document.getElementById('deleteModal').style.display = 'none';
+}
+
+// enhance tag input with suggestions
+document.addEventListener('DOMContentLoaded', function() {
+    const tagInput = document.querySelector('#{{ form.tags.id_for_label }}');
+    if (tagInput) {
+        // add some basic tag suggestions on focus (in real app would fetch from backend)
+        tagInput.addEventListener('focus', function() {
+            if (!this.value) {
+                this.placeholder = 'e.g. research, important, follow-up, dataset, analysis';
+            }
+        });
+        
+        tagInput.addEventListener('blur', function() {
+            this.placeholder = 'Comma-separated tags...';
+        });
+    }
+});
+</script>
+{% endblock %}

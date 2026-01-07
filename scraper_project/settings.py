@@ -1,7 +1,7 @@
 import os
-import sentry_sdk
+import sentry_sdk 
 from pathlib import Path
-from sentry_sdk.integrations.django import DjangoIntegration
+from sentry_sdk.integrations.django import DjangoIntegration  # temporarily disabled
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -10,15 +10,15 @@ SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-default-key-change-me')
 DEBUG = os.getenv('DEBUG', 'True').lower() == 'true'
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
 
-# Sentry Configuration
+# Sentry Configuration 
 sentry_sdk.init(
-    dsn=os.getenv("SENTRY_DSN", ""), # Sentry DSN from environment variable, dont use if emppty to not get interrupted at dev
-    # Add data like request headers and IP for users,
-    # see https://docs.sentry.io/platforms/python/data-management/data-collected/ for more info
-    integrations=[DjangoIntegration()],
-    environment=ENVIRONMENT,  # 'development', 'production', etc.
-    traces_sample_rate=0.5,   # Adjust for performance monitoring (0.0–1.0)
-    send_default_pii=True,
+     dsn=os.getenv("SENTRY_DSN", ""), # Sentry DSN from environment variable, dont use if emppty to not get interrupted at dev
+     # Add data like request headers and IP for users,
+     # see https://docs.sentry.io/platforms/python/data-management/data-collected/ for more info
+     integrations=[DjangoIntegration()],
+     environment=ENVIRONMENT,  # 'development', 'production', etc.
+     traces_sample_rate=0.5,   # Adjust for performance monitoring (0.0–1.0)
+     send_default_pii=True,
 )
 
 
@@ -29,6 +29,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.humanize',  # For number formatting filters like intcomma
     'webscraper',
 ]
 
@@ -55,6 +56,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'webscraper.context_processors.user_profile',  # custom context processor for user profiles
             ],
         },
     },
@@ -62,23 +64,33 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'scraper_project.wsgi.application'
 
-# POSTGRESQL - Smart defaults
-DB_NAME = os.getenv('DB_NAME', 'scrapper_db')
-DB_USER = os.getenv('DB_USER', 'scrapper_user')
-DB_PASSWORD = os.getenv('DB_PASSWORD', 'password123')
-DB_HOST = os.getenv('DB_HOST', 'localhost')
-DB_PORT = os.getenv('DB_PORT', '5432')
-
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': DB_NAME,
-        'USER': DB_USER,
-        'PASSWORD': DB_PASSWORD,
-        'HOST': DB_HOST,
-        'PORT': DB_PORT,
+# Database Configuration
+if ENVIRONMENT == 'development' and not os.getenv('USE_POSTGRES'):
+    # Use SQLite for development when PostgreSQL is not available
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
     }
-}
+else:
+    # POSTGRESQL - Smart defaults
+    DB_NAME = os.getenv('DB_NAME', 'scrapper_db')
+    DB_USER = os.getenv('DB_USER', 'scrapper_user')
+    DB_PASSWORD = os.getenv('DB_PASSWORD', 'password123')
+    DB_HOST = os.getenv('DB_HOST', 'localhost')
+    DB_PORT = os.getenv('DB_PORT', '5432')
+
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': DB_NAME,
+            'USER': DB_USER,
+            'PASSWORD': DB_PASSWORD,
+            'HOST': DB_HOST,
+            'PORT': DB_PORT,
+        }
+    }
 
 # Celery Configuration
 CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL', 'redis://redis:6379/0')
@@ -104,6 +116,10 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+# Media files for user uploads
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 

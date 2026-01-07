@@ -1,0 +1,8 @@
+
+/* Import all modules (can be optimized per-page, but i dont care) */
+@import url('scraping-base.css');
+@import url('scraping-dashboard.css');
+@import url('scraping-projects.css');
+@import url('scraping-scrapes.css');
+@import url('scraping-forms.css');
+@import url('scraping-modals.css');

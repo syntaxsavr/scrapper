@@ -1,0 +1,765 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load string_filters %}
+
+{% block title %}{{ scrape.query }} - Scrape Details{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" type="text/css" href="{% static 'css/scraping.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-12">
+            <!-- scrape header -->
+            <div class="scraping-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h2>
+                            <i class="fas fa-search"></i>
+                            "{{ scrape.query }}"
+                            {% if scrape.is_bookmarked %}
+                                <i class="fas fa-bookmark text-warning"></i>
+                            {% endif %}
+                        </h2>
+                        <div class="scrape-meta">
+                            <span class="status-badge status-{{ scrape.status }}">
+                                {{ scrape.get_status_display }}
+                            </span>
+                            {% if scrape.project %}
+                                <span class="project-badge" style="background-color: {{ scrape.project.color_theme }}">
+                                    {{ scrape.project.name }}
+                                </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div>
+                        <div class="btn-group mr-2">
+                            <button class="btn btn-outline-primary dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                <i class="fas fa-folder-plus"></i> 
+                                {% if scrape.project %}
+                                    Change Project
+                                {% else %}
+                                    Add to Project
+                                {% endif %}
+                            </button>
+                            <div class="dropdown-menu">
+                                {% if all_projects %}
+                                    {% for project in all_projects %}
+                                        <a class="dropdown-item project-assign-btn" href="#" 
+                                           data-scrape-id="{{ scrape.id }}" 
+                                           data-project-id="{{ project.id }}"
+                                           data-project-name="{{ project.name }}">
+                                            <span style="display:inline-block;width:12px;height:12px;background-color:{{ project.color }};border-radius:2px;margin-right:5px;"></span>
+                                            {{ project.name }}
+                                            {% if scrape.project and scrape.project.id == project.id %}
+                                                <i class="fas fa-check text-success"></i>
+                                            {% endif %}
+                                        </a>
+                                    {% endfor %}
+                                    {% if scrape.project %}
+                                        <div class="dropdown-divider"></div>
+                                        <a class="dropdown-item text-danger project-remove-btn" href="#" 
+                                           data-scrape-id="{{ scrape.id }}">
+                                            <i class="fas fa-times"></i> Remove from Project
+                                        </a>
+                                    {% endif %}
+                                {% else %}
+                                    <span class="dropdown-item text-muted">No projects available</span>
+                                    <div class="dropdown-divider"></div>
+                                    <a class="dropdown-item" href="{% url 'create_project' %}">
+                                        <i class="fas fa-plus"></i> Create Project
+                                    </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <!-- Action buttons -->
+                        {% if scrape.status == 'running' or scrape.status == 'pending' %}
+                            <button class="btn btn-danger" onclick="cancelScrape({{ scrape.id }})">
+                                <i class="fas fa-stop"></i> Cancel Scrape
+                            </button>
+                        {% endif %}
+                        
+                        {% if scrape.status == 'completed' or scrape.status == 'failed' %}
+                            <button class="btn btn-success" onclick="rerunScrape({{ scrape.id }})">
+                                <i class="fas fa-redo"></i> Rerun Scrape
+                            </button>
+                        {% endif %}
+                        
+                        <button class="btn btn-info" onclick="showScheduleModal()">
+                            <i class="fas fa-calendar-alt"></i> Schedule
+                        </button>
+                        
+                        <a href="{% url 'edit_scrape' scrape.id %}" class="btn btn-primary">
+                            <i class="fas fa-edit"></i> Edit Scrape
+                        </a>
+                        <a href="{% url 'scrapes' %}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> Back to Scrapes
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- scrape stats -->
+            <div class="row mb-4">
+                <div class="col-md-4">
+                    <div class="stats-card">
+                        <div class="stats-icon">
+                            <i class="fas fa-database"></i>
+                        </div>
+                        <div class="stats-content">
+                            <h3>{{ total_items }}</h3>
+                            <p>Total Items</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="stats-card">
+                        <div class="stats-icon">
+                            <i class="fas fa-star"></i>
+                        </div>
+                        <div class="stats-content">
+                            <h3>{{ starred_count }}</h3>
+                            <p>Starred Items</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="stats-card">
+                        <div class="stats-icon">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div class="stats-content">
+                            <h3>{{ scrape.started_at|date:"M j" }}</h3>
+                            <p>Started</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- scrape info -->
+            {% if scrape.notes or scrape.tags %}
+                <div class="project-section mb-4">
+                    <div class="section-header">
+                        <h4><i class="fas fa-info-circle"></i> Scrape Information</h4>
+                    </div>
+                    
+                    {% if scrape.notes %}
+                        <div class="info-card">
+                            <h6><i class="fas fa-sticky-note"></i> Notes</h6>
+                            <p>{{ scrape.notes }}</p>
+                        </div>
+                    {% endif %}
+                    
+                    {% if scrape.tags %}
+                        <div class="info-card">
+                            <h6><i class="fas fa-tags"></i> Tags</h6>
+                            <div class="tags">
+                                {% for tag in scrape.tags|split_tags:"," %}
+                                    <span class="tag">{{ tag }}</span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+            {% endif %}
+
+            <!-- scraped items -->
+            <div class="project-section">
+                <div class="section-header">
+                    <h4><i class="fas fa-list"></i> Scraped Items</h4>
+                    <div class="filter-controls">
+                        <button class="btn btn-success btn-sm" onclick="exportToCSV()">
+                            <i class="fas fa-file-csv"></i> Export CSV
+                        </button>
+                        {% if starred_count > 0 %}
+                            <button class="btn btn-outline-warning btn-sm" id="starredFilterBtn" onclick="toggleStarredFilter()">
+                                <i class="fas fa-star"></i> Show Starred Only
+                            </button>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- Search box -->
+                <div class="mb-3">
+                    <form method="get" action="" id="searchForm" class="form-inline">
+                        <div class="input-group" style="width: 100%; max-width: 500px;">
+                            <input type="text" 
+                                   name="search" 
+                                   class="form-control" 
+                                   placeholder="Search items by title, description, author, or tags..." 
+                                   value="{{ search_query }}"
+                                   id="searchInput">
+                            <div class="input-group-append">
+                                <button class="btn btn-primary" type="submit">
+                                    <i class="fas fa-search"></i> Search
+                                </button>
+                                {% if search_query %}
+                                    <a href="{% url 'scrape_detail' scrape.id %}" class="btn btn-secondary">
+                                        <i class="fas fa-times"></i> Clear
+                                    </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% if show_starred_only %}
+                            <input type="hidden" name="starred" value="true">
+                        {% endif %}
+                    </form>
+                    {% if search_query %}
+                        <p class="text-muted mt-2 mb-0">
+                            <i class="fas fa-info-circle"></i> 
+                            Showing {{ filtered_items }} of {{ total_items }} items matching "{{ search_query }}"
+                        </p>
+                    {% elif show_starred_only %}
+                        <p class="text-muted mt-2 mb-0">
+                            <i class="fas fa-filter"></i> 
+                            Showing {{ filtered_items }} starred items
+                        </p>
+                    {% endif %}
+                </div>
+                
+                {% if items %}
+                    <div class="scraped-items" id="scrapedItems">
+                        {% for item in items %}
+                            <div class="scraped-item {% if item.is_starred %}starred{% endif %}" 
+                                 data-starred="{{ item.is_starred|yesno:'true,false' }}">
+                                <div class="item-header">
+                                    <h5>
+                                        {% if item.url %}
+                                            <a href="{{ item.url }}" target="_blank" rel="noopener">
+                                                {{ item.title }}
+                                                <i class="fas fa-external-link-alt"></i>
+                                            </a>
+                                        {% else %}
+                                            {{ item.title }}
+                                        {% endif %}
+                                    </h5>
+                                    <div class="item-actions">
+                                        <button class="btn btn-sm btn-outline-warning star-btn" 
+                                                onclick="toggleStar({{ item.id }}, this)"
+                                                title="{% if item.is_starred %}Remove from starred{% else %}Add to starred{% endif %}">
+                                            <i class="{% if item.is_starred %}fas{% else %}far{% endif %} fa-star"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                {% if item.description %}
+                                    <p class="item-description">{{ item.description }}</p>
+                                {% endif %}
+                                
+                                <div class="item-meta">
+                                    {% if item.source %}
+                                        <span><i class="fas fa-globe"></i> {{ item.source }}</span>
+                                    {% endif %}
+                                    <span><i class="fas fa-calendar"></i> {{ item.created_at|date:"M j, Y g:i A" }}</span>
+                                    {% if item.tags %}
+                                        <div class="tags">
+                                            {% for tag in item.tags|split_tags:"," %}
+                                                <span class="tag">{{ tag }}</span>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                
+                                {% if item.notes %}
+                                    <div class="item-notes">
+                                        <strong>Notes:</strong> {{ item.notes }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                    </div>
+                    
+                    <!-- Pagination -->
+                    {% if page_obj.has_other_pages %}
+                        <div class="pagination-wrapper">
+                            <nav>
+                                <ul class="pagination">
+                                    {% if page_obj.has_previous %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page=1">«</a>
+                                        </li>
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}">‹</a>
+                                        </li>
+                                    {% else %}
+                                        <li class="page-item disabled">
+                                            <span class="page-link">«</span>
+                                        </li>
+                                        <li class="page-item disabled">
+                                            <span class="page-link">‹</span>
+                                        </li>
+                                    {% endif %}
+                                    
+                                    {% for num in page_obj.paginator.page_range %}
+                                        {% if page_obj.number == num %}
+                                            <li class="page-item active">
+                                                <span class="page-link">{{ num }}</span>
+                                            </li>
+                                        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                                            <li class="page-item">
+                                                <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                                            </li>
+                                        {% endif %}
+                                    {% endfor %}
+                                    
+                                    {% if page_obj.has_next %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page={{ page_obj.next_page_number }}">›</a>
+                                        </li>
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">»</a>
+                                        </li>
+                                    {% else %}
+                                        <li class="page-item disabled">
+                                            <span class="page-link">›</span>
+                                        </li>
+                                        <li class="page-item disabled">
+                                            <span class="page-link">»</span>
+                                        </li>
+                                    {% endif %}
+                                </ul>
+                            </nav>
+                            <p class="pagination-info">
+                                Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }} • {{ total_items }} total items
+                            </p>
+                        </div>
+                    {% endif %}
+                {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-database fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">No items found</h5>
+                        <p class="text-muted">
+                            {% if scrape.status == 'running' %}
+                                This scrape is still running. Items will appear here as they are found.
+                            {% elif scrape.status == 'failed' %}
+                                This scrape failed to complete. Check the error details.
+                            {% else %}
+                                No items were found for this search query.
+                            {% endif %}
+                        </p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Schedule Modal -->
+<div id="scheduleModal" class="modal" style="display: none;">
+    <div class="modal-content" style="max-width: 500px; margin: 100px auto; background: #1e1e1e; padding: 30px; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.5);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h3 style="margin: 0; color: #e0e0e0;"><i class="fas fa-calendar-alt"></i> Schedule Automatic Reruns</h3>
+            <button onclick="closeScheduleModal()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #999;">&times;</button>
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+            <p style="color: #b0b0b0; margin-bottom: 15px;">Configure this scrape to run automatically at regular intervals.</p>
+            
+            <div style="margin-bottom: 15px;">
+                <label style="display: block; margin-bottom: 5px; font-weight: bold; color: #e0e0e0;">
+                    <i class="fas fa-clock"></i> Frequency
+                </label>
+                <select id="scheduleFrequency" class="form-control" style="width: 100%; padding: 8px; border: 1px solid #444; border-radius: 4px; background: #2d2d2d; color: #e0e0e0;">
+                    <option value="none" {% if scrape.schedule_frequency == 'none' %}selected{% endif %}>No Schedule</option>
+                    <option value="hourly" {% if scrape.schedule_frequency == 'hourly' %}selected{% endif %}>Every Hour</option>
+                    <option value="daily" {% if scrape.schedule_frequency == 'daily' %}selected{% endif %}>Daily</option>
+                    <option value="weekly" {% if scrape.schedule_frequency == 'weekly' %}selected{% endif %}>Weekly</option>
+                    <option value="monthly" {% if scrape.schedule_frequency == 'monthly' %}selected{% endif %}>Monthly</option>
+                </select>
+            </div>
+            
+            <div style="margin-bottom: 15px;">
+                <label style="display: flex; align-items: center; cursor: pointer; color: #e0e0e0;">
+                    <input type="checkbox" id="scheduleActive" {% if scrape.is_scheduled_active %}checked{% endif %} style="margin-right: 8px;">
+                    <span><i class="fas fa-power-off"></i> Enable Scheduled Runs</span>
+                </label>
+            </div>
+            
+            {% if scrape.next_run_at %}
+                <div style="padding: 10px; background: #2d2d2d; border-radius: 4px; margin-bottom: 15px; border: 1px solid #444;">
+                    <small style="color: #b0b0b0;">
+                        <i class="fas fa-info-circle"></i> Next scheduled run: 
+                        <strong style="color: #4CAF50;">{{ scrape.next_run_at|date:"M j, Y H:i" }}</strong>
+                    </small>
+                </div>
+            {% endif %}
+        </div>
+        
+        <div style="display: flex; justify-content: flex-end; gap: 10px;">
+            <button onclick="closeScheduleModal()" class="btn btn-secondary">
+                <i class="fas fa-times"></i> Cancel
+            </button>
+            <button onclick="saveSchedule()" class="btn btn-primary">
+                <i class="fas fa-save"></i> Save Schedule
+            </button>
+        </div>
+    </div>
+</div>
+
+<style>
+.modal {
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0,0,0,0.5);
+}
+</style>
+
+<script>
+let showingStarredOnly = false;
+
+function toggleStarredOnly() {
+    const items = document.querySelectorAll('.scraped-item');
+    const button = document.querySelector('[onclick="toggleStarredOnly()"]');
+    
+    showingStarredOnly = !showingStarredOnly;
+    
+    items.forEach(item => {
+        const isStarred = item.dataset.starred === 'true';
+        if (showingStarredOnly && !isStarred) {
+            item.style.display = 'none';
+        } else {
+            item.style.display = 'block';
+        }
+    });
+    
+    if (showingStarredOnly) {
+        button.innerHTML = '<i class="fas fa-list"></i> Show All Items';
+        button.classList.remove('btn-outline-warning');
+        button.classList.add('btn-warning');
+    } else {
+        button.innerHTML = '<i class="fas fa-star"></i> Show Starred Only';
+        button.classList.remove('btn-warning');
+        button.classList.add('btn-outline-warning');
+    }
+}
+
+function toggleStar(itemId, button) {
+    button.disabled = true;
+    
+    fetch(`/api/items/${itemId}/star/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const item = button.closest('.scraped-item');
+            const icon = button.querySelector('i');
+            
+            if (data.is_starred) {
+                item.classList.add('starred');
+                item.dataset.starred = 'true';
+                icon.classList.remove('far');
+                icon.classList.add('fas');
+                button.setAttribute('title', 'Remove from starred');
+            } else {
+                item.classList.remove('starred');
+                item.dataset.starred = 'false';
+                icon.classList.remove('fas');
+                icon.classList.add('far');
+                button.setAttribute('title', 'Add to starred');
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Failed to update star status');
+    })
+    .finally(() => {
+        button.disabled = false;
+    });
+}
+
+// Project assignment functionality
+document.addEventListener('DOMContentLoaded', function() {
+    // Handle project assignment
+    const projectAssignBtns = document.querySelectorAll('.project-assign-btn');
+    projectAssignBtns.forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const scrapeId = this.dataset.scrapeId;
+            const projectId = this.dataset.projectId;
+            const projectName = this.dataset.projectName;
+            
+            assignScrapeToProject(scrapeId, projectId, projectName);
+        });
+    });
+    
+    // Handle project removal
+    const projectRemoveBtns = document.querySelectorAll('.project-remove-btn');
+    projectRemoveBtns.forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const scrapeId = this.dataset.scrapeId;
+            
+            if (confirm('Remove this scrape from its project?')) {
+                removeScrapeFromProject(scrapeId);
+            }
+        });
+    });
+});
+
+function assignScrapeToProject(scrapeId, projectId, projectName) {
+    const formData = new FormData();
+    formData.append('project_id', projectId);
+    
+    fetch(`/api/scrapes/${scrapeId}/add-to-project/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+        },
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast(data.message, 'success');
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            showToast('Failed to add scrape to project', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showToast('Failed to add scrape to project', 'error');
+    });
+}
+
+function removeScrapeFromProject(scrapeId) {
+    const formData = new FormData();
+    formData.append('project_id', '');
+    
+    fetch(`/api/scrapes/${scrapeId}/add-to-project/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+        },
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast(data.message, 'success');
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            showToast('Failed to remove scrape from project', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showToast('Failed to remove scrape from project', 'error');
+    });
+}
+
+function showToast(message, type = 'info') {
+    const toast = document.createElement('div');
+    toast.className = `alert alert-${type === 'success' ? 'success' : 'danger'} toast-notification`;
+    toast.style.position = 'fixed';
+    toast.style.top = '20px';
+    toast.style.right = '20px';
+    toast.style.zIndex = '9999';
+    toast.style.minWidth = '250px';
+    toast.innerHTML = `<i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i> ${message}`;
+    
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.remove();
+    }, 3000);
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+// Cancel a running scrape
+function cancelScrape(scrapeId) {
+    if (!confirm('Are you sure you want to cancel this scrape?')) {
+        return;
+    }
+    
+    fetch(`/api/scrapes/${scrapeId}/cancel/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast(data.message, 'success');
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            showToast(data.message || 'Failed to cancel scrape', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showToast('Failed to cancel scrape', 'error');
+    });
+}
+
+// Rerun a scrape
+function rerunScrape(scrapeId) {
+    if (!confirm('This will create a new scrape with the same query. Continue?')) {
+        return;
+    }
+    
+    fetch(`/api/scrapes/${scrapeId}/rerun/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast(data.message, 'success');
+            setTimeout(() => {
+                window.location.href = `/scrapes/${data.scrape_id}/`;
+            }, 1500);
+        } else {
+            showToast(data.message || 'Failed to rerun scrape', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showToast('Failed to rerun scrape', 'error');
+    });
+}
+
+// Show schedule modal
+function showScheduleModal() {
+    document.getElementById('scheduleModal').style.display = 'block';
+}
+
+// Close schedule modal
+function closeScheduleModal() {
+    document.getElementById('scheduleModal').style.display = 'none';
+}
+
+// Save schedule settings
+function saveSchedule() {
+    const frequency = document.getElementById('scheduleFrequency').value;
+    const isActive = document.getElementById('scheduleActive').checked;
+    
+    const formData = new FormData();
+    formData.append('frequency', frequency);
+    formData.append('is_active', isActive);
+    
+    fetch(`/api/scrapes/{{ scrape.id }}/schedule/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast(data.message, 'success');
+            closeScheduleModal();
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            showToast(data.message || 'Failed to update schedule', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showToast('Failed to update schedule', 'error');
+    });
+}
+
+// Close modal when clicking outside
+window.onclick = function(event) {
+    const modal = document.getElementById('scheduleModal');
+    if (event.target == modal) {
+        closeScheduleModal();
+    }
+}
+
+// Export scrape data to CSV
+function exportToCSV() {
+    const searchQuery = document.getElementById('searchInput').value;
+    const showStarred = document.getElementById('starredFilterBtn') && 
+                       document.getElementById('starredFilterBtn').classList.contains('active');
+    
+    let url = `/scrapes/{{ scrape.id }}/export-csv/`;
+    const params = new URLSearchParams();
+    
+    if (searchQuery) {
+        params.append('search', searchQuery);
+    }
+    if (showStarred) {
+        params.append('starred', 'true');
+    }
+    
+    if (params.toString()) {
+        url += '?' + params.toString();
+    }
+    
+    window.location.href = url;
+}
+
+// Toggle starred filter
+function toggleStarredFilter() {
+    const btn = document.getElementById('starredFilterBtn');
+    const searchInput = document.getElementById('searchInput');
+    const currentUrl = new URL(window.location.href);
+    
+    if (btn.classList.contains('active')) {
+        // Remove filter
+        btn.classList.remove('active', 'btn-warning');
+        btn.classList.add('btn-outline-warning');
+        currentUrl.searchParams.delete('starred');
+    } else {
+        // Add filter
+        btn.classList.add('active', 'btn-warning');
+        btn.classList.remove('btn-outline-warning');
+        currentUrl.searchParams.set('starred', 'true');
+    }
+    
+    // Preserve search query
+    if (searchInput.value) {
+        currentUrl.searchParams.set('search', searchInput.value);
+    }
+    
+    // Reset to page 1 when filtering
+    currentUrl.searchParams.delete('page');
+    
+    window.location.href = currentUrl.toString();
+}
+
+// Initialize starred filter button state
+document.addEventListener('DOMContentLoaded', function() {
+    const btn = document.getElementById('starredFilterBtn');
+    if (btn && '{{ show_starred_only }}' === 'True') {
+        btn.classList.add('active', 'btn-warning');
+        btn.classList.remove('btn-outline-warning');
+    }
+});
+</script>
+{% endblock %}

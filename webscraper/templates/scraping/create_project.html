@@ -1,0 +1,153 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Create Project{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/scraping.css' %}">
+<link rel="stylesheet" href="{% static 'css/accounts.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="page-header">
+        <h1><i class="fas fa-plus"></i> Create New Project</h1>
+        <a href="{% url 'projects' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Projects
+        </a>
+    </div>
+
+    <div class="form-container">
+        <div class="card">
+            <div class="card-body">
+                <form method="post" class="project-form">
+                    {% csrf_token %}
+                    
+                    <div class="form-group">
+                        <label for="{{ form.name.id_for_label }}">
+                            <i class="fas fa-tag"></i> Project Name
+                        </label>
+                        {{ form.name }}
+                        {% if form.name.errors %}
+                            <div class="form-error">
+                                {% for error in form.name.errors %}
+                                    <small class="text-danger">{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="form-group">
+                        <label for="{{ form.description.id_for_label }}">
+                            <i class="fas fa-align-left"></i> Description
+                        </label>
+                        {{ form.description }}
+                        {% if form.description.errors %}
+                            <div class="form-error">
+                                {% for error in form.description.errors %}
+                                    <small class="text-danger">{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            <label for="{{ form.color.id_for_label }}">
+                                <i class="fas fa-palette"></i> Color Theme
+                            </label>
+                            {{ form.color }}
+                            {% if form.color.errors %}
+                                <div class="form-error">
+                                    {% for error in form.color.errors %}
+                                        <small class="text-danger">{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="form-group col-md-6">
+                            <div class="form-check-container">
+                                <div class="form-check">
+                                    {{ form.is_favorite }}
+                                    <label for="{{ form.is_favorite.id_for_label }}" class="form-check-label">
+                                        <i class="fas fa-star"></i> Mark as Favorite
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-plus"></i> Create Project
+                        </button>
+                        <a href="{% url 'projects' %}" class="btn btn-secondary">
+                            <i class="fas fa-times"></i> Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Project Preview -->
+        <div class="project-preview-card">
+            <h4><i class="fas fa-eye"></i> Preview</h4>
+            <div class="project-card preview" id="projectPreview">
+                <div class="project-header" id="previewHeader">
+                    <div class="project-title">
+                        <h3 id="previewName">New Project</h3>
+                        <p class="text-muted" id="previewDesc">Project description will appear here...</p>
+                    </div>
+                    <div class="project-color" id="previewColor"></div>
+                </div>
+                <div class="project-stats">
+                    <div class="stat">
+                        <i class="fas fa-search"></i>
+                        <span>0 scrapes</span>
+                    </div>
+                    <div class="stat">
+                        <i class="fas fa-clock"></i>
+                        <span>Just created</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// project form preview - update preview as user types
+document.addEventListener('DOMContentLoaded', function() {
+    const nameInput = document.getElementById('id_name');
+    const descInput = document.getElementById('id_description');
+    const colorInput = document.getElementById('id_color');
+    const favoriteInput = document.getElementById('id_is_favorite');
+    
+    const previewName = document.getElementById('previewName');
+    const previewDesc = document.getElementById('previewDesc');
+    const previewColor = document.getElementById('previewColor');
+    const previewHeader = document.getElementById('previewHeader');
+
+    // update preview on input change
+    nameInput.addEventListener('input', function() {
+        previewName.textContent = this.value || 'New Project';
+    });
+    
+    descInput.addEventListener('input', function() {
+        previewDesc.textContent = this.value || 'Project description will appear here...';
+    });
+    
+    colorInput.addEventListener('input', function() {
+        previewColor.style.backgroundColor = this.value;
+        previewHeader.style.borderLeftColor = this.value;
+    });
+
+    // set initial preview values
+    previewColor.style.backgroundColor = colorInput.value;
+    previewHeader.style.borderLeftColor = colorInput.value;
+});
+</script>
+{% endblock %}
