@@ -671,7 +671,8 @@ class ScrapingViewsTests(TestCase):
         self.assertIn('project_stats', data)
     @patch("webscraper.views.search_datasets")
     @patch("webscraper.views.scrap_huggingface_datasets")
-    def test_api_search_valid_query(self, mock_scrap_hf, mock_search):
+    @patch("webscraper.views.scrape_kaggle_task")
+    def test_api_search_valid_query(self, mock_scrap_kg, mock_scrap_hf, mock_search):
         mock_local_task = Mock()
         mock_local_task.id = "local-task-123"
         mock_search.delay.return_value = mock_local_task
@@ -680,6 +681,10 @@ class ScrapingViewsTests(TestCase):
         mock_hf_task.id = "hf-task-456"
         mock_scrap_hf.delay.return_value = mock_hf_task
 
+        mock_kg_task = Mock()
+        mock_kg_task.id = "hf-task-426"
+        mock_scrap_kg.delay.return_value = mock_kg_task
+
         url = reverse("api_search")
         response = self.client.get(url, {"q": "machine learning"})
 
@@ -687,13 +692,15 @@ class ScrapingViewsTests(TestCase):
 
         data = response.json()
         self.assertIn("task_ids", data)
-        self.assertEqual(len(data["task_ids"]), 2)
+        self.assertEqual(len(data["task_ids"]), 3)
         self.assertIn("local-task-123", data["task_ids"])
         self.assertIn("hf-task-456", data["task_ids"])
+        self.assertIn("hf-task-426", data["task_ids"])
 
         # Now expects user_scrape_id parameter
         mock_search.delay.assert_called_once_with("machine learning", user_scrape_id=None)
         mock_scrap_hf.delay.assert_called_once_with("machine learning", user_scrape_id=None)
+        mock_scrap_kg.delay.assert_called_once_with("machine learning", 100, user_scrape_id=None)
 
     @patch("webscraper.views.search_datasets")
     @patch("webscraper.views.scrap_huggingface_datasets")
