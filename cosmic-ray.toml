@@ -6,6 +6,7 @@ excluded-modules = [
     "webscraper.admin",
     "webscraper.apps",
     "webscraper.management",
+    "webscraper/tests/test_scraper_kaggle.py",
     "__init__"
 ]
 
