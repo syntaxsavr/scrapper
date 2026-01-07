@@ -13,7 +13,7 @@ def user_profile(request):
                 user=request.user,
                 defaults={'full_name': request.user.get_full_name() or request.user.username}
             )
-        except Exception as e:
+        except Exception:
             # fallback in case something goes wrong
             profile = None
         context['user_profile'] = profile  # add to context

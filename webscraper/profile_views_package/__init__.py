@@ -1,4 +1,60 @@
 # Views package for profile functionality - keeps main views.py clean
-from .account_views import *  # user profile stuff
-from .payment_views import *  # payment method crud
-from .scraping_views import *  # scraping organization system
+from .account_views import (
+    profile_view,
+    edit_profile_view,
+    change_username_view,
+    profile_api,
+)
+from .payment_views import (
+    payment_methods_view,
+    add_payment_method_view,
+    edit_payment_method_view,
+    delete_payment_method_view,
+)
+from .scraping_views import (
+    dashboard_view,
+    projects_view,
+    create_project_view,
+    project_detail_view,
+    edit_project_view,
+    scrapes_view,
+    scrape_detail_view,
+    edit_scrape_view,
+    stats_api_view,
+    toggle_bookmark_api,
+    toggle_star_api,
+    add_scrape_to_project,
+    delete_scrape,
+    cancel_scrape,
+    rerun_scrape,
+    update_scrape_schedule,
+    export_scrape_csv,
+)
+
+__all__ = [
+    'profile_view',
+    'edit_profile_view',
+    'change_username_view',
+    'profile_api',
+    'payment_methods_view',
+    'add_payment_method_view',
+    'edit_payment_method_view',
+    'delete_payment_method_view',
+    'dashboard_view',
+    'projects_view',
+    'create_project_view',
+    'project_detail_view',
+    'edit_project_view',
+    'scrapes_view',
+    'scrape_detail_view',
+    'edit_scrape_view',
+    'stats_api_view',
+    'toggle_bookmark_api',
+    'toggle_star_api',
+    'add_scrape_to_project',
+    'delete_scrape',
+    'cancel_scrape',
+    'rerun_scrape',
+    'update_scrape_schedule',
+    'export_scrape_csv',
+]
