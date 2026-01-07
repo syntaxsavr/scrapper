@@ -691,8 +691,9 @@ class ScrapingViewsTests(TestCase):
         self.assertIn("local-task-123", data["task_ids"])
         self.assertIn("hf-task-456", data["task_ids"])
 
-        mock_search.delay.assert_called_once_with("machine learning")
-        mock_scrap_hf.delay.assert_called_once_with("machine learning")
+        # Now expects user_scrape_id parameter
+        mock_search.delay.assert_called_once_with("machine learning", user_scrape_id=None)
+        mock_scrap_hf.delay.assert_called_once_with("machine learning", user_scrape_id=None)
 
     @patch("webscraper.views.search_datasets")
     @patch("webscraper.views.scrap_huggingface_datasets")
