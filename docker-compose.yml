@@ -58,6 +58,19 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+  
+  celery_scraping_kaggle:
+    build: .
+    command: celery -A scraper_project worker --loglevel=warning --queues=scraping --concurrency=2
+    volumes:
+      - .:/app
+    env_file:
+      - .env
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
 
   celery-beat:
     build: .
