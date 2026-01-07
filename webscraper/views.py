@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse
-from .tasks import search_datasets, scrap_huggingface_datasets
+from .tasks import search_datasets, scrap_huggingface_datasets, scrape_kaggle_task
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth import login
 from .models import Dataset
@@ -17,9 +17,10 @@ def api_search(request):
 
     local_task = search_datasets.delay(query)
     hf_task = scrap_huggingface_datasets.delay(query)
+    kg_task = scrape_kaggle_task.delay(query, 60)
 
     return JsonResponse({
-        "task_ids": [local_task.id, hf_task.id]
+        "task_ids": [local_task.id, hf_task.id, kg_task.id]
     })
 
 def api_task_status(_, task_id):
@@ -34,6 +35,11 @@ def api_task_status(_, task_id):
 
         if "retrigger_task_id" in result:
             response["retrigger_task_id"] = result["retrigger_task_id"]
+
+        if "retrigger_failed" in result:
+            return JsonResponse({
+            "status": "failed",
+        })
 
         return JsonResponse(response)
     else:

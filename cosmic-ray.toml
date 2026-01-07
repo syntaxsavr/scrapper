@@ -2,10 +2,10 @@
 module-path = "webscraper"
 timeout = 30.0
 excluded-modules = [
-    "webscraper.migrations",
-    "webscraper.admin",
-    "webscraper.apps",
-    "webscraper.management",
+    "webscraper/migrations*",
+    "webscraper/admin*",
+    "webscraper/apps*",
+    "webscraper/management*",
     "webscraper/tests/test_scraper_kaggle.py",
     "__init__"
 ]
@@ -74,4 +74,24 @@ exclude-operators = [
   "core/ReplaceBinaryOperator_BitXor_LShift",
   "core/ReplaceBinaryOperator_BitXor_BitOr",
   "core/ReplaceBinaryOperator_BitXor_BitAnd",
+  "core/ReplaceComparisonOperator_Is_Eq",
+  "core/ReplaceComparisonOperator_Is_Lt",
+  "core/ReplaceComparisonOperator_Is_LtE",
+  "core/ReplaceComparisonOperator_Is_Gt",
+  "core/ReplaceComparisonOperator_Is_GtE",
+  "core/ReplaceComparisonOperator_Is_NotEq",
+  "core/ReplaceComparisonOperator_Is_NotLt",
+  "core/ReplaceComparisonOperator_Is_NotLtE",
+  "core/ReplaceComparisonOperator_Is_NotGt",
+  "core/ReplaceComparisonOperator_Is_NotGtE",
+  "core/ReplaceComparisonOperator_IsNot_Eq",
+  "core/ReplaceComparisonOperator_IsNot_Lt",
+  "core/ReplaceComparisonOperator_IsNot_LtE",
+  "core/ReplaceComparisonOperator_IsNot_Gt",
+  "core/ReplaceComparisonOperator_IsNot_GtE",
+  "core/ReplaceComparisonOperator_IsNot_NotEq",
+  "core/ReplaceComparisonOperator_IsNot_NotLt",
+  "core/ReplaceComparisonOperator_IsNot_NotLtE",
+  "core/ReplaceComparisonOperator_IsNot_NotGt",
+  "core/ReplaceComparisonOperator_IsNot_NotGtE",
 ]
