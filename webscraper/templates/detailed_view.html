@@ -1,34 +1,239 @@
 {% extends "base.html" %}
+{% load string_filters %}
+{% load humanize %}
 {% block content %}
-<div class="navbar">
-    <div class="nav-left">
-        <h2><a href="{% url 'home' %}">Web Scraper</a></h2>
-    </div>
-    <div class="nav-right">
-        <span class="welcome-text">Welcome, {{ user.username }}</span>
-        <form method="post" action="{% url 'logout' %}" class="logout-form">
-            {% csrf_token %}
-            <button type="submit" class="btn logout-btn">Logout</button>
-        </form>
-    </div>
-</div>
 <div class="detailed_view_container">
-    <h2>{{ dataset.title }}</h2>
-    {% if dataset.thumbnail %}
-        <div class="dataset-thumbnail">
-            <img src="{{ dataset.thumbnail }}" alt="{{ dataset.title }} thumbnail">
+    <div class="dataset-header">
+        <h2><i class="fas fa-database"></i> {{ dataset.title }}</h2>
+        <div class="dataset-meta">
+            {% if dataset.author %}
+                <span class="meta-item">
+                    <i class="fas fa-user"></i> {{ dataset.author }}
+                </span>
+            {% endif %}
+            <span class="meta-item">
+                <i class="fas fa-calendar"></i> Added {{ dataset.created_at|timesince }} ago
+            </span>
         </div>
-    {% endif %}
-    {% if dataset.link %}
-        <p>
-            <a href="{{ dataset.link }}" target="_blank" rel="noopener noreferrer">
-                {{ dataset.title }}
-            </a>
-        </p>
-    {% endif %}
+    </div>
+
     {% if dataset.description %}
-    <p>Description:</p>
-    <p>{{ dataset.description }}</p>
+    <div class="card mb-3">
+        <div class="card-body">
+            <h5 class="card-title"><i class="fas fa-info-circle"></i> Description</h5>
+            <p class="card-text">{{ dataset.description }}</p>
+        </div>
+    </div>
+    {% else %}
+    <div class="alert alert-info">
+        <i class="fas fa-info-circle"></i> No description available for this dataset.
+    </div>
     {% endif %}
+
+    <!-- Statistics Card -->
+    {% if dataset.downloads or dataset.likes %}
+    <div class="card mb-3">
+        <div class="card-body">
+            <h5 class="card-title"><i class="fas fa-chart-line"></i> Statistics</h5>
+            <div class="stats-grid">
+                {% if dataset.downloads %}
+                <div class="stat-item">
+                    <i class="fas fa-download stat-icon"></i>
+                    <div>
+                        <div class="stat-value">{{ dataset.downloads|intcomma }}</div>
+                        <div class="stat-label">Downloads</div>
+                    </div>
+                </div>
+                {% endif %}
+                {% if dataset.likes %}
+                <div class="stat-item">
+                    <i class="fas fa-heart stat-icon"></i>
+                    <div>
+                        <div class="stat-value">{{ dataset.likes|intcomma }}</div>
+                        <div class="stat-label">Likes</div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Tags -->
+    {% if dataset.tags %}
+    <div class="card mb-3">
+        <div class="card-body">
+            <h5 class="card-title"><i class="fas fa-tags"></i> Tags</h5>
+            <div class="tags-container">
+                {% for tag in dataset.tags|split_tags:"," %}
+                    <span class="badge badge-primary tag-badge">{{ tag }}</span>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Action Buttons -->
+    <div class="mt-4 action-buttons">
+        {% if dataset.url %}
+        <a href="{{ dataset.url }}" target="_blank" rel="noopener" class="btn btn-primary">
+            <i class="fas fa-external-link-alt"></i> View on HuggingFace
+        </a>
+        {% endif %}
+        <a href="{% url 'home' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Search
+        </a>
+    </div>
 </div>
+
+<style>
+.detailed_view_container {
+    max-width: 900px;
+    margin: 2rem auto;
+    padding: 0 1rem;
+}
+
+.dataset-header {
+    background: var(--card-background);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 25px;
+    margin-bottom: 25px;
+}
+
+.dataset-header h2 {
+    color: var(--text-color);
+    margin: 0 0 15px 0;
+    font-size: 1.75rem;
+    word-break: break-word;
+}
+
+.dataset-meta {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    color: var(--text-muted);
+    font-size: 0.95rem;
+}
+
+.meta-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.meta-item i {
+    color: var(--primary-color);
+}
+
+.card {
+    background: var(--card-background);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.card-body {
+    padding: 20px;
+}
+
+.card-title {
+    color: var(--text-color);
+    font-size: 1.2rem;
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.card-title i {
+    color: var(--primary-color);
+}
+
+.card-text {
+    color: var(--text-muted);
+    line-height: 1.8;
+    white-space: pre-wrap;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 20px;
+    margin-top: 15px;
+}
+
+.stat-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 15px;
+    background: var(--background-color);
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+}
+
+.stat-icon {
+    font-size: 2rem;
+    color: var(--primary-color);
+}
+
+.stat-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-color);
+}
+
+.stat-label {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.tags-container {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 10px;
+}
+
+.tag-badge {
+    padding: 6px 12px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    background: var(--primary-color);
+    color: white;
+    border-radius: 16px;
+    display: inline-block;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.alert {
+    border-radius: 8px;
+    padding: 15px 20px;
+}
+
+.alert-info {
+    background: #e7f3ff;
+    border: 1px solid #b3d9ff;
+    color: #004085;
+}
+
+@media (max-width: 768px) {
+    .dataset-meta {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
 {% endblock %}
