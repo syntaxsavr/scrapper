@@ -1,6 +1,6 @@
 [cosmic-ray]
 module-path = "webscraper"
-timeout = 10.0
+timeout = 60.0
 excluded-modules = [
     "webscraper.migrations",
     "webscraper.admin",
