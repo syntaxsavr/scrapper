@@ -6,6 +6,22 @@
 {% endblock %}
 
 {% block content %}
+<!-- Hero Section for Non-Logged-In Users -->
+{% if not user.is_authenticated %}
+<div class="hero-section">
+    <div class="hero-content">
+        <h1 class="hero-title">Search & Manage HuggingFace Datasets</h1>
+        <p class="hero-subtitle">
+            Track, organize, and schedule your dataset scrapes with a powerful dashboard.
+        </p>
+        <div class="hero-cta">
+            <a href="{% url 'signup' %}" class="btn btn-hero btn-primary">Sign Up Free</a>
+            <a href="{% url 'login' %}" class="btn btn-hero btn-secondary">Login</a>
+        </div>
+    </div>
+</div>
+{% endif %}
+
 <!-- main search area (the heart of our scraper!) -->
 <div class="search-container">
     <form id="search-form">
