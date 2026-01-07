@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+
+{% block title %}Add Payment Method{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="profile-header">
+        <div class="profile-info">
+            <h1>Add Payment Method</h1>
+            <p>Add a new credit or debit card to your account</p>
+        </div>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="profile-section">
+        <form method="post" class="payment-form">
+            {% csrf_token %}
+            
+            <div class="form-group">
+                <label for="{{ form.card_type.id_for_label }}">Card Type:</label>
+                {{ form.card_type }}
+                {% if form.card_type.errors %}
+                    <ul class="errorlist">
+                        {% for error in form.card_type.errors %}
+                            <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.last_four_digits.id_for_label }}">Last Four Digits:</label>
+                {{ form.last_four_digits }}
+                {% if form.last_four_digits.errors %}
+                    <ul class="errorlist">
+                        {% for error in form.last_four_digits.errors %}
+                            <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="{{ form.expiry_month.id_for_label }}">Expiry Month:</label>
+                    {{ form.expiry_month }}
+                    {% if form.expiry_month.errors %}
+                        <ul class="errorlist">
+                            {% for error in form.expiry_month.errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label for="{{ form.expiry_year.id_for_label }}">Expiry Year:</label>
+                    {{ form.expiry_year }}
+                    {% if form.expiry_year.errors %}
+                        <ul class="errorlist">
+                            {% for error in form.expiry_year.errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.is_primary.id_for_label }}">{{ form.is_primary }} Make this my primary payment method</label>
+                {% if form.is_primary.errors %}
+                    <ul class="errorlist">
+                        {% for error in form.is_primary.errors %}
+                            <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-success">Add Payment Method</button>
+                <a href="{% url 'payment_methods' %}" class="btn btn-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block title %}Payment Methods{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="header-section">
+        <h1>Payment Methods</h1>
+        <a href="{% url 'add_payment_method' %}" class="btn btn-success">
+            <i class="fas fa-plus"></i> Add Payment Method
+        </a>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="payment-methods-grid">{}
+        {% if payment_methods %}
+            {% for payment in payment_methods %}
+                <div class="payment-method-card">
+                    <div class="card-header">
+                        <div class="card-brand">
+                            {% if payment.card_type == 'visa' %}
+                                <i class="fab fa-cc-visa" style="color: #1a1f71;"></i>
+                            {% elif payment.card_type == 'mastercard' %}
+                                <i class="fab fa-cc-mastercard" style="color: #eb001b;"></i>
+                            {% elif payment.card_type == 'amex' %}
+                                <i class="fab fa-cc-amex" style="color: #006fcf;"></i>
+                            {% elif payment.card_type == 'discover' %}
+                                <i class="fab fa-cc-discover" style="color: #ff6000;"></i>
+                            {% elif payment.card_type == 'paypal' %}
+                                <i class="fab fa-cc-paypal" style="color: #003087;"></i>
+                            {% else %}
+                                <i class="far fa-credit-card"></i>
+                            {% endif %}
+                            <span class="card-type">{{ payment.get_card_type_display }}</span>
+                        </div>
+                        {% if payment.is_primary %}
+                            <span class="primary-badge">Primary</span>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="card-details">
+                        <div class="card-number">
+                            •••• •••• •••• {{ payment.last_four_digits }}
+                        </div>
+                        <div class="cardholder-name">{{ payment.cardholder_name }}</div>
+                        <div class="card-expiry">Expires {{ payment.expiry_month|stringformat:"02d" }}/{{ payment.expiry_year }}</div>
+                    </div>
+
+                    <div class="card-actions">
+                        <a href="{% url 'edit_payment_method' payment.id %}" class="btn btn-sm btn-secondary">
+                            <i class="fas fa-edit"></i> Edit
+                        </a>
+                        <a href="{% url 'delete_payment_method' payment.id %}" class="btn btn-sm btn-danger">
+                            <i class="fas fa-trash"></i> Delete
+                        </a>
+                    </div>
+
+                    <div class="card-footer">
+                        <small class="text-muted">Added {{ payment.created_at|date:"M d, Y" }}</small>
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <div class="empty-state">
+                <div class="empty-icon">
+                    <i class="far fa-credit-card"></i>
+                </div>
+                <h3>No Payment Methods</h3>
+                <p>You haven't added any payment methods yet. Add one to get started.</p>
+                <a href="{% url 'add_payment_method' %}" class="btn btn-primary">Add Your First Payment Method</a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

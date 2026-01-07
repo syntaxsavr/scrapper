@@ -1,0 +1,111 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}My Projects{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/scraping.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="page-header">
+        <h1><i class="fas fa-folder"></i> My Scraping Projects</h1>
+        <a href="{% url 'create_project' %}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> New Project
+        </a>
+    </div>
+
+    {% if projects %}
+        <div class="projects-grid">
+            {% for project in projects %}
+            <div class="project-card">
+                <div class="project-header" style="border-left: 4px solid {{ project.color }};">
+                    <div class="project-title">
+                        <h3>
+                            <a href="{% url 'project_detail' project.id %}">{{ project.name }}</a>
+                            {% if project.is_favorite %}
+                                <i class="fas fa-star text-warning" title="Favorite"></i>
+                            {% endif %}
+                        </h3>
+                        <p class="text-muted">{{ project.description|truncatechars:100 }}</p>
+                    </div>
+                    <div class="project-color" style="background-color: {{ project.color }};"></div>
+                </div>
+                
+                <div class="project-stats">
+                    <div class="stat">
+                        <i class="fas fa-search"></i>
+                        <span>{{ project.scrape_count }} scrapes</span>
+                    </div>
+                    <div class="stat">
+                        <i class="fas fa-clock"></i>
+                        <span>Updated {{ project.updated_at|timesince }} ago</span>
+                    </div>
+                    {% if project.latest_scrape %}
+                    <div class="stat">
+                        <i class="fas fa-database"></i>
+                        <span>{{ project.latest_scrape.results_count }} latest results</span>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="project-actions">
+                    <a href="{% url 'project_detail' project.id %}" class="btn btn-sm btn-primary">
+                        <i class="fas fa-eye"></i> View
+                    </a>
+                    <a href="{% url 'edit_project' project.id %}" class="btn btn-sm btn-outline-secondary">
+                        <i class="fas fa-edit"></i> Edit
+                    </a>
+                    {% if project.latest_scrape %}
+                        <a href="{% url 'scrape_detail' project.latest_scrape.id %}" class="btn btn-sm btn-outline-info">
+                            <i class="fas fa-search"></i> Latest
+                        </a>
+                    {% endif %}
+                </div>
+
+                {% if project.latest_scrape %}
+                <div class="latest-scrape">
+                    <small class="text-muted">
+                        Latest: <strong>{{ project.latest_scrape.query|truncatechars:30 }}</strong>
+                        <span class="badge badge-{{ project.latest_scrape.status }}">{{ project.latest_scrape.get_status_display }}</span>
+                    </small>
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty-state">
+            <div class="empty-icon">
+                <i class="fas fa-folder-open"></i>
+            </div>
+            <h3>No Projects Yet</h3>
+            <p class="text-muted">Create your first project to organize your scraping activities.</p>
+            <a href="{% url 'create_project' %}" class="btn btn-primary btn-lg">
+                <i class="fas fa-plus"></i> Create Your First Project
+            </a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// simple project interactions
+document.addEventListener('DOMContentLoaded', function() {
+    // add hover effects or other interactions if needed
+    const projectCards = document.querySelectorAll('.project-card');
+    
+    projectCards.forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-2px)';  // lift effect
+        });
+        
+        card.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0)';  // back to normal
+        });
+    });
+});
+</script>
+{% endblock %}

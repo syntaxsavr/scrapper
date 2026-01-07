@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Payment Method{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="form-container">
+        <h1>
+            <i class="fas fa-edit"></i>
+            Edit Payment Method
+        </h1>
+        
+        <div class="current-method">
+            <div class="method-preview">
+                <div class="card-brand">
+                    {% if payment_method.card_type == 'visa' %}
+                        <i class="fab fa-cc-visa" style="color: #1a1f71;"></i>
+                    {% elif payment_method.card_type == 'mastercard' %}
+                        <i class="fab fa-cc-mastercard" style="color: #eb001b;"></i>
+                    {% elif payment_method.card_type == 'amex' %}
+                        <i class="fab fa-cc-amex" style="color: #006fcf;"></i>
+                    {% elif payment_method.card_type == 'discover' %}
+                        <i class="fab fa-cc-discover" style="color: #ff6000;"></i>
+                    {% elif payment_method.card_type == 'paypal' %}
+                        <i class="fab fa-cc-paypal" style="color: #003087;"></i>
+                    {% else %}
+                        <i class="far fa-credit-card"></i>
+                    {% endif %}
+                    <span>{{ payment_method.get_card_type_display }} •••• {{ payment_method.last_four_digits }}</span>
+                </div>
+                {% if payment_method.is_primary %}
+                    <span class="primary-badge">Primary</span>
+                {% endif %}
+            </div>
+        </div>
+
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+
+        <form method="post" class="payment-form">
+            {% csrf_token %}
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="{{ form.card_type.id_for_label }}">
+                        <i class="far fa-credit-card"></i>
+                        {{ form.card_type.label }}
+                    </label>
+                    {{ form.card_type }}
+                    {% if form.card_type.errors %}
+                        <div class="error">{{ form.card_type.errors }}</div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.cardholder_name.id_for_label }}">
+                    <i class="fas fa-user"></i>
+                    {{ form.cardholder_name.label }}
+                </label>
+                {{ form.cardholder_name }}
+                {% if form.cardholder_name.errors %}
+                    <div class="error">{{ form.cardholder_name.errors }}</div>
+                {% endif %}
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="{{ form.last_four_digits.id_for_label }}">
+                        <i class="fas fa-hashtag"></i>
+                        {{ form.last_four_digits.label }}
+                    </label>
+                    {{ form.last_four_digits }}
+                    <small class="form-text">Last 4 digits of your card</small>
+                    {% if form.last_four_digits.errors %}
+                        <div class="error">{{ form.last_four_digits.errors }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label for="{{ form.expiry_month.id_for_label }}">
+                        <i class="fas fa-calendar"></i>
+                        {{ form.expiry_month.label }}
+                    </label>
+                    {{ form.expiry_month }}
+                    {% if form.expiry_month.errors %}
+                        <div class="error">{{ form.expiry_month.errors }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label for="{{ form.expiry_year.id_for_label }}">
+                        <i class="fas fa-calendar-alt"></i>
+                        {{ form.expiry_year.label }}
+                    </label>
+                    {{ form.expiry_year }}
+                    {% if form.expiry_year.errors %}
+                        <div class="error">{{ form.expiry_year.errors }}</div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.billing_address.id_for_label }}">
+                    <i class="fas fa-map-marker-alt"></i>
+                    {{ form.billing_address.label }}
+                </label>
+                {{ form.billing_address }}
+                {% if form.billing_address.errors %}
+                    <div class="error">{{ form.billing_address.errors }}</div>
+                {% endif %}
+            </div>
+
+            <div class="form-group checkbox-group">
+                <div class="checkbox-wrapper">
+                    {{ form.is_primary }}
+                    <label for="{{ form.is_primary.id_for_label }}" class="checkbox-label">
+                        <i class="fas fa-star"></i>
+                        {{ form.is_primary.label }}
+                    </label>
+                </div>
+                <small class="form-text">Set this as your primary payment method</small>
+                {% if form.is_primary.errors %}
+                    <div class="error">{{ form.is_primary.errors }}</div>
+                {% endif %}
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i>
+                    Update Payment Method
+                </button>
+                <a href="{% url 'payment_methods' %}" class="btn btn-secondary">
+                    <i class="fas fa-times"></i>
+                    Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
