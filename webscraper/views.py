@@ -48,9 +48,10 @@ def api_search(request):
     # Also start HuggingFace scraping in the background to get more results
     # This populates the local database with new datasets
     huggingface_task = scrap_huggingface_datasets.delay(query, user_scrape_id=None)
+    kaggle_task = scrape_kaggle_task.delay(query, 100, user_scrape_id=None)
 
     response_data = {
-        "task_ids": [local_task.id, huggingface_task.id],
+        "task_ids": [local_task.id, huggingface_task.id, kaggle_task.id],
         "status": "started",
         "message": f"Search started for '{query}'",
         "is_authenticated": request.user.is_authenticated
@@ -135,7 +136,7 @@ def api_create_scrape(request):
     # Start the scraping task (HuggingFace scraping)
     hf_task = scrap_huggingface_datasets.delay(query, user_scrape.id)
 
-    kg_task = scrape_kaggle_task.delay(query, 60)
+    kg_task = scrape_kaggle_task.delay(query, 100, user_scrape.id)
 
     return JsonResponse({
         "task_ids": [local_task.id, hf_task.id, kg_task.id]
