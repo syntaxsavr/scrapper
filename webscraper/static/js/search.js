@@ -183,7 +183,7 @@ document.addEventListener('DOMContentLoaded', function() {
             html += '<h2>Found ' + statusData.results.length + ' result(s) for "' + escapeHtml(query) + '"</h2>';
             html += '<div class="results-list">';
 
-            results.forEach(function(result) {
+            statusData.results.forEach(function(result) {
                 html += '<a href="/detailed_view/' + result.id + '/" class="result-link">';
                 html += '<div class="result-item">';
                 html += '<h3>' + escapeHtml(result.title) + '</h3>';

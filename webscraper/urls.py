@@ -43,6 +43,4 @@ urlpatterns = [
     # API URLs - background tasks
     path("api/search/", views.api_search, name="api_search"),  # start search
     path("api/status/<str:task_id>/", views.api_task_status, name="api_task_status"),  # check task status
-    path("api/scrape-hugging-face-search/", views.api_scrape_hugging_face_search,  # scrape huggingface
-         name="api_scrape_hugging_face_search")
 ]
