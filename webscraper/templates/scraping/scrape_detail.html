@@ -348,20 +348,20 @@
 
 <!-- Schedule Modal -->
 <div id="scheduleModal" class="modal" style="display: none;">
-    <div class="modal-content" style="max-width: 500px; margin: 100px auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.2);">
+    <div class="modal-content" style="max-width: 500px; margin: 100px auto; background: #1e1e1e; padding: 30px; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.5);">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-            <h3 style="margin: 0;"><i class="fas fa-calendar-alt"></i> Schedule Automatic Reruns</h3>
+            <h3 style="margin: 0; color: #e0e0e0;"><i class="fas fa-calendar-alt"></i> Schedule Automatic Reruns</h3>
             <button onclick="closeScheduleModal()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #999;">&times;</button>
         </div>
         
         <div style="margin-bottom: 20px;">
-            <p style="color: #666; margin-bottom: 15px;">Configure this scrape to run automatically at regular intervals.</p>
+            <p style="color: #b0b0b0; margin-bottom: 15px;">Configure this scrape to run automatically at regular intervals.</p>
             
             <div style="margin-bottom: 15px;">
-                <label style="display: block; margin-bottom: 5px; font-weight: bold;">
+                <label style="display: block; margin-bottom: 5px; font-weight: bold; color: #e0e0e0;">
                     <i class="fas fa-clock"></i> Frequency
                 </label>
-                <select id="scheduleFrequency" class="form-control" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                <select id="scheduleFrequency" class="form-control" style="width: 100%; padding: 8px; border: 1px solid #444; border-radius: 4px; background: #2d2d2d; color: #e0e0e0;">
                     <option value="none" {% if scrape.schedule_frequency == 'none' %}selected{% endif %}>No Schedule</option>
                     <option value="hourly" {% if scrape.schedule_frequency == 'hourly' %}selected{% endif %}>Every Hour</option>
                     <option value="daily" {% if scrape.schedule_frequency == 'daily' %}selected{% endif %}>Daily</option>
@@ -371,17 +371,17 @@
             </div>
             
             <div style="margin-bottom: 15px;">
-                <label style="display: flex; align-items: center; cursor: pointer;">
+                <label style="display: flex; align-items: center; cursor: pointer; color: #e0e0e0;">
                     <input type="checkbox" id="scheduleActive" {% if scrape.is_scheduled_active %}checked{% endif %} style="margin-right: 8px;">
                     <span><i class="fas fa-power-off"></i> Enable Scheduled Runs</span>
                 </label>
             </div>
             
             {% if scrape.next_run_at %}
-                <div style="padding: 10px; background: #f8f9fa; border-radius: 4px; margin-bottom: 15px;">
-                    <small style="color: #666;">
+                <div style="padding: 10px; background: #2d2d2d; border-radius: 4px; margin-bottom: 15px; border: 1px solid #444;">
+                    <small style="color: #b0b0b0;">
                         <i class="fas fa-info-circle"></i> Next scheduled run: 
-                        <strong>{{ scrape.next_run_at|date:"M j, Y H:i" }}</strong>
+                        <strong style="color: #4CAF50;">{{ scrape.next_run_at|date:"M j, Y H:i" }}</strong>
                     </small>
                 </div>
             {% endif %}
