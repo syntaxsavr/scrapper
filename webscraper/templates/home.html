@@ -1,32 +1,61 @@
 {% extends "base.html" %}
 {% load static %}
 {% block content %}
-<div class="navbar">
-    <div class="nav-left">
-        <h2><a href="{% url 'home' %}">Web Scraper</a></h2>
+<header class="top-nav">
+    <div class="brand">
+        <a href="{% url 'home' %}" class="brand-name">ssokz</a>
+        <span class="brand-tagline">Smart Scraping & Orchestration of Knowledge Zones</span>
     </div>
-    <div class="nav-right">
+    <div class="nav-actions">
         {% if user.is_authenticated %}
-            <span class="welcome-text">Welcome, {{ user.username }}</span>
-            <form method="post" action="{% url 'logout' %}" class="logout-form">
+            <span class="welcome">{{ user.username }}</span>
+            <form method="post" action="{% url 'logout' %}">
                 {% csrf_token %}
-                <button type="submit" class="btn logout-btn">Logout</button>
+                <button class="btn btn-outline" type="submit">Logout</button>
             </form>
         {% else %}
-            <a href="{% url 'login' %}" class="btn">Login</a>
+            <a href="{% url 'login' %}" class="btn btn-outline">Login</a>
             <a href="{% url 'signup' %}" class="btn btn-primary">Sign Up</a>
         {% endif %}
     </div>
-</div>
+</header>
 
-<div class="search-container">
-    <form id="search-form">
-        <input type="text" name="search" id="search-input" placeholder="Search datasets...">
-        <button type="submit">Search</button>
-    </form>
-</div>
+<section class="hero">
+    <div class="hero-content">
+        <h1>Discover & Compare Datasets</h1>
+        <p class="hero-subtitle">
+            An intelligent hub for dataset discovery, metadata extraction, and comparison.
+        </p>
+
+        <div class="search-container">
+            <form id="search-form">
+                <input type="text" name="search" id="search-input" placeholder="Search datasets...">
+                <button type="submit">Search</button>
+            </form>
+        </div>
+    </div>
+</section>
+
+<section class="value-props">
+    <div class="prop">
+        <h3>🔍 Smart Discovery</h3>
+        <p>Search multiple sources with one query and get clean, structured dataset metadata.</p>
+    </div>
+    <div class="prop">
+        <h3>⚙️ Automated Pipelines</h3>
+        <p>Configurable scraping & scheduling powered by a robust orchestration backend.</p>
+    </div>
+    <div class="prop">
+        <h3>📊 Compare & Organize</h3>
+        <p>Explore, compare, and manage datasets in a user-centric dashboard.</p>
+    </div>
+</section>
 
 <div id="results-container"></div>
+
+<footer class="footer">
+    <p>© 2026 ssokz · Advanced Software Engineering Project</p>
+</footer>
 
 <script src="{% static 'js/search.js' %}"></script>
 {% endblock %}
