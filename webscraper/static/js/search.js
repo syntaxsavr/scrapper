@@ -52,6 +52,7 @@ document.addEventListener('DOMContentLoaded', function() {
         let primaryComplete = false;
         let scrapingTaskIds = taskIds.filter(function(id) { return id !== primaryTaskId; });
         let retriggeredTaskIds = [];
+        let hasDisplayedResults = false; // Track if we've shown any results
 
         let currentDelay = 500;
         const minDelay = 500;
@@ -79,11 +80,18 @@ document.addEventListener('DOMContentLoaded', function() {
                         if (statusData.status === 'completed') {
                             primaryComplete = true;
                             console.log('Primary search complete. Found', statusData.results.length, 'results');
-                            displayResults(query, statusData);
+                            
+                            // Check if we have active scraping/retrigger tasks
+                            const stillSearching = scrapingTaskIds.length > 0 || retriggeredTaskIds.length > 0;
+                            displayResults(query, statusData, stillSearching);
+                            hasDisplayedResults = true;
                             return { completed: true };
                         } else {
-                            resultsContainer.innerHTML =
-                                '<div class="content"><h2>Searching...</h2></div>';
+                            // Only show "Searching..." if we haven't displayed results yet
+                            if (!hasDisplayedResults) {
+                                resultsContainer.innerHTML =
+                                    '<div class="content"><h2>Searching...</h2></div>';
+                            }
                             return { completed: false };
                         }
                     })
@@ -122,7 +130,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     .then(statusData => {
                         if (statusData.status === 'completed' && statusData.results) {
                             console.log('Retrigger complete. Updated results:', statusData.results.length);
-                            displayResults(query, statusData);
+                            
+                            // Check if we still have scraping tasks running
+                            const stillSearching = scrapingTaskIds.length > 0;
+                            displayResults(query, statusData, stillSearching);
+                            hasDisplayedResults = true;
                             completedRetriggerTaskIds.push(retriggerTaskId);
                             return { completed: true };
                         }
@@ -171,16 +183,32 @@ document.addEventListener('DOMContentLoaded', function() {
         pollTasks();
     }
 
-    function displayResults(query, statusData) {
+    function displayResults(query, statusData, stillSearching) {
         if (statusData.results.length === 0) {
-            resultsContainer.innerHTML =
-                '<div class="content">' +
-                '<h2>No results found for "' + escapeHtml(query) + '"</h2>' +
-                '<p>Try a different search term.</p>' +
-                '</div>';
+            if (stillSearching) {
+                // Still searching, show a waiting message with spinner or indication
+                resultsContainer.innerHTML =
+                    '<div class="content">' +
+                    '<h2>Searching for more results...</h2>' +
+                    '<p>Currently found 0 results. Checking additional sources...</p>' +
+                    '</div>';
+            } else {
+                // All tasks complete, truly no results
+                resultsContainer.innerHTML =
+                    '<div class="content">' +
+                    '<h2>No results found for "' + escapeHtml(query) + '"</h2>' +
+                    '<p>Try a different search term.</p>' +
+                    '</div>';
+            }
         } else {
             let html = '<div class="content">';
             html += '<h2>Found ' + statusData.results.length + ' result(s) for "' + escapeHtml(query) + '"</h2>';
+            
+            // Show "searching for more" indicator if still active
+            if (stillSearching) {
+                html += '<p style="color: #666; font-style: italic;">Searching for more results...</p>';
+            }
+            
             html += '<div class="results-list">';
 
             statusData.results.forEach(function(result) {
