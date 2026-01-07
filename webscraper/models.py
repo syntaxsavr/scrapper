@@ -3,7 +3,6 @@ from django.contrib.auth.models import User
 from django.utils import timezone
 from datetime import timedelta
 from django.core.validators import MinLengthValidator, MaxLengthValidator
-import json  # for storing scrape results
 
 class Log(models.Model):
     message = models.CharField(max_length=200)
@@ -27,6 +26,9 @@ class Dataset(models.Model):
 
     class Meta:
         ordering = ['-created_at']
+
+    def __str__(self):
+        return self.title
 
 
 class UserProfile(models.Model):
@@ -159,7 +161,7 @@ class UserScrape(models.Model):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')  # current state
     
     # celery task tracking for cancellation
-    celery_task_id = models.CharField(max_length=255, blank=True, null=True)  # track running task
+    celery_task_id = models.CharField(max_length=255, blank=True, default='')  # track running task
     
     # scheduling for automatic reruns
     schedule_frequency = models.CharField(max_length=20, choices=SCHEDULE_CHOICES, default='none')  # how often to rerun

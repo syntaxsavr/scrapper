@@ -6,7 +6,7 @@ from django.db.models import Count, Q, Avg, Sum
 from django.utils import timezone
 from datetime import timedelta
 from ..models import UserScrape, ScrapingProject, ScrapedDataItem  # scraping models
-from ..forms import ScrapingProjectForm, ScrapeEditForm, DataItemNotesForm
+from ..forms import ScrapingProjectForm, ScrapeEditForm
 
 
 @login_required
@@ -201,8 +201,6 @@ def scrapes_view(request):
 def scrape_detail_view(request, scrape_id):
     """View individual scrape with all results"""
     from celery.result import AsyncResult
-    from datetime import timedelta
-    from django.db.models import Q
     
     scrape = get_object_or_404(UserScrape, id=scrape_id, user=request.user)  # make sure user owns it
     
@@ -304,7 +302,6 @@ def stats_api_view(request):
     user = request.user
     
     # scrapes by month for last 6 months
-    six_months_ago = timezone.now() - timedelta(days=180)
     monthly_stats = []
     
     for i in range(6):  # last 6 months
@@ -544,7 +541,6 @@ def export_scrape_csv(request, scrape_id):
     """Export scrape data as CSV"""
     import csv
     from django.http import HttpResponse
-    from django.db.models import Q
     
     scrape = get_object_or_404(UserScrape, id=scrape_id, user=request.user)
     

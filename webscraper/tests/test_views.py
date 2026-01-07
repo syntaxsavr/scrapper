@@ -3,7 +3,6 @@ from django.urls import reverse
 from webscraper.models import Dataset
 from webscraper.tests.constants import OK, REDIRECT, NOT_FOUND, BAD_REQUEST
 from django.contrib.auth.models import User
-from django.contrib.auth.forms import UserCreationForm
 from webscraper.models import UserProfile, PaymentMethod, ScrapingProject, UserScrape, ScrapedDataItem
 from django.utils import timezone
 from datetime import timedelta
@@ -380,7 +379,7 @@ class PaymentViewsTests(TestCase):
     
     def test_edit_payment_method_view_unauthorized(self):
         """Edit payment should fail for non-owner"""
-        other_user = User.objects.create_user(username='other', password='pass')
+        User.objects.create_user(username='other', password='pass')
         self.client.login(username='other', password='pass')
         
         url = reverse('edit_payment_method', kwargs={'payment_id': self.payment.id})
@@ -519,7 +518,7 @@ class ScrapingViewsTests(TestCase):
     
     def test_edit_project_view_unauthorized(self):
         """Edit project should fail for non-owner"""
-        other_user = User.objects.create_user(username='other', password='pass')
+        User.objects.create_user(username='other', password='pass')
         self.client.login(username='other', password='pass')
         
         url = reverse('edit_project', kwargs={'project_id': self.project.id})
