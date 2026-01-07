@@ -8,11 +8,6 @@ urlpatterns = [
     path("login/", views.login_view, name="login"),
     path("signup/", views.signup_view, name="signup"),
     path("logout/", LogoutView.as_view(next_page="home"), name="logout"),
-
     path("api/search/", views.api_search, name="api_search"),
     path("api/status/<str:task_id>/", views.api_task_status, name="api_task_status"),
-    path("api/scrape-hugging-face-search/", views.api_scrape_hugging_face_search,
-         name="api_scrape_hugging_face_search"),
-    path("api/scrape-kaggle-search/", views.api_scrape_kaggle_search,
-         name="api_scrape_kaggle_search")
 ]

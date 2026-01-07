@@ -1,5 +1,7 @@
 from celery import shared_task
+from django.db.models import Q
 from .utils.hugging_face.fetch_datasets import fetch_huggingface_datasets
+from .utils.search.scoring import calculate_search_score
 from .models import Dataset
 from scrapers.kaggle.scraper_kaggle import KaggleScraperSelenium
 from threading import Lock
@@ -7,35 +9,48 @@ from threading import Lock
 lock = Lock()
 
 
-@shared_task
-def search_datasets(query):
-    from django.db.models import Q
+def _perform_search_with_scoring(query):
     results = Dataset.objects.filter(
         Q(title__icontains=query) | Q(description__icontains=query)
     )
 
-    count = results.count()
+    results_with_scores = []
+    for dataset in results:
+        score = calculate_search_score(query, dataset.title, dataset.description)
+        results_with_scores.append({
+            "id": dataset.id,
+            "title": dataset.title,
+            "description": dataset.description,
+            "score": score
+        })
+
+    results_with_scores.sort(key=lambda x: x["score"], reverse=True)
+
+    for result in results_with_scores:
+        del result["score"]
+
+    return results_with_scores
+
+@shared_task(queue='search')
+def search_datasets(query):
+    results_with_scores = _perform_search_with_scoring(query)
 
     return {
-        "query": query,
-        "count": count,
-        "results": list(results.values("id", "title", "description"))
+        "results": results_with_scores
     }
 
-@shared_task
-def run_hugging_face_search_task(query: str, limit: int = 50):
-    scraped_items = fetch_huggingface_datasets(query=query, limit=limit)
-    added_count = 0
+@shared_task(queue='celery')
+def scrap_huggingface_datasets(query):
+    scraped_items = fetch_huggingface_datasets(query=query, limit=50)
 
     for item in scraped_items:
         if not Dataset.objects.filter(title=item["title"]).exists():
             Dataset.objects.create(title=item["title"], description=item["description"])
-            added_count += 1
+
+    retrigger_task = search_datasets.delay(query)
 
     return {
-        "query": query,
-        "total_scraped": len(scraped_items),
-        "added": added_count
+        "retrigger_task_id": retrigger_task.id
     }
 
 @shared_task(bind=True, max_retries=3, queue='scraping')
