@@ -19,16 +19,35 @@ def api_search(request):
     if not query:  # need something to search
         return JsonResponse({"error": "No query provided"}, status=400)
 
-    # create user scrape record if user is logged in
+    # create or get existing user scrape record if user is logged in
     user_scrape = None
     if request.user.is_authenticated:
         from .models import UserScrape  # import here to avoid circular imports
-        user_scrape = UserScrape.objects.create(
+        from django.utils import timezone
+        from datetime import timedelta
+        
+        # Check if user has a recent scrape with the same query (within last hour)
+        one_hour_ago = timezone.now() - timedelta(hours=1)
+        existing_scrape = UserScrape.objects.filter(
             user=request.user,
-            query=query,
-            source='hugging_face',
-            status='pending'
-        )
+            query__iexact=query,  # case-insensitive match
+            started_at__gte=one_hour_ago
+        ).first()
+        
+        if existing_scrape:
+            # Reuse existing scrape
+            user_scrape = existing_scrape
+            user_scrape.status = 'pending'  # reset status
+            user_scrape.started_at = timezone.now()  # update timestamp
+            user_scrape.save()
+        else:
+            # Create new scrape
+            user_scrape = UserScrape.objects.create(
+                user=request.user,
+                query=query,
+                source='hugging_face',
+                status='pending'
+            )
 
     task = search_datasets.delay(query, user_scrape.id if user_scrape else None)  # pass scrape id to task
 

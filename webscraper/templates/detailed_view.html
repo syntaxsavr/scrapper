@@ -1,22 +1,38 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="navbar">
-    <div class="nav-left">
-        <h2><a href="{% url 'home' %}">Web Scraper</a></h2>
-    </div>
-    <div class="nav-right">
-        <span class="welcome-text">Welcome, {{ user.username }}</span>
-        <form method="post" action="{% url 'logout' %}" class="logout-form">
-            {% csrf_token %}
-            <button type="submit" class="btn logout-btn">Logout</button>
-        </form>
-    </div>
-</div>
 <div class="detailed_view_container">
-    <h2>{{ dataset.title }}</h2>
+    <div class="mb-4">
+        <h2>{{ dataset.title }}</h2>
+        <p class="text-muted">
+            <i class="fas fa-calendar"></i> Added {{ dataset.created_at|timesince }} ago
+        </p>
+    </div>
+
     {% if dataset.description %}
-    <p>Description:</p>
-    <p>{{ dataset.description }}</p>
+    <div class="card mb-3">
+        <div class="card-body">
+            <h5 class="card-title"><i class="fas fa-info-circle"></i> Description</h5>
+            <p class="card-text">{{ dataset.description|truncatewords:100 }}</p>
+        </div>
+    </div>
+    {% else %}
+    <div class="alert alert-info">
+        <i class="fas fa-info-circle"></i> No description available for this dataset.
+    </div>
     {% endif %}
+
+    <div class="mt-4">
+        <a href="{% url 'home' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Search
+        </a>
+    </div>
 </div>
+
+<style>
+.detailed_view_container {
+    max-width: 800px;
+    margin: 2rem auto;
+    padding: 0 1rem;
+}
+</style>
 {% endblock %}

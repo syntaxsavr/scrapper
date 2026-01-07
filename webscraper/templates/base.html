@@ -83,12 +83,25 @@
         </div>
     </div>
 
+    <!-- Django Messages Display -->
+    {% if messages %}
+        <div class="messages-container">
+            {% for message in messages %}
+                <div class="message message-{{ message.tags }}">
+                    {{ message }}
+                    <button class="message-close" onclick="this.parentElement.remove()">×</button>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
     <!-- main content area -->
     {% block content %}
     {% endblock %}
-
+    
     <!-- scripts for dropdown magic and such -->
     <script src="{% static 'js/accounts.js' %}"></script>
+    <script src="{% static 'js/dropdown.js' %}"></script>
     {% block extra_js %}{% endblock %}
 </body>
 </html>

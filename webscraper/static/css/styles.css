@@ -6,6 +6,74 @@
     --nav-bg: #0c0c0c;
     --hover-color: #333333;
     --search-hover-color: #9a4fff;
+    --card-background: #1e1e1e;
+    --background-color: #181818;
+    --border-color: #333;
+    --text-muted: #999;
+}
+
+/* Messages Container */
+.messages-container {
+    position: fixed;
+    top: 80px;
+    right: 20px;
+    z-index: 9999;
+    max-width: 400px;
+}
+
+.message {
+    background: var(--card-background);
+    border-left: 4px solid;
+    padding: 15px 40px 15px 15px;
+    margin-bottom: 10px;
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    animation: slideInRight 0.3s ease-out;
+    position: relative;
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+.message-success {
+    border-left-color: #28a745;
+}
+
+.message-error {
+    border-left-color: #dc3545;
+}
+
+.message-warning {
+    border-left-color: #ffc107;
+}
+
+.message-info {
+    border-left-color: #17a2b8;
+}
+
+.message-close {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: none;
+    border: none;
+    color: var(--text-color);
+    font-size: 24px;
+    cursor: pointer;
+    opacity: 0.6;
+    transition: opacity 0.2s;
+}
+
+.message-close:hover {
+    opacity: 1;
 }
 
 body {
@@ -564,6 +632,75 @@ a {
 
 .logout-item:hover i {
     color: #dc3545;
+}
+
+/* Django Messages */
+.messages-container {
+    position: fixed;
+    top: 70px;
+    right: 20px;
+    z-index: 9999;
+    max-width: 400px;
+}
+
+.message {
+    padding: 15px 40px 15px 15px;
+    margin-bottom: 10px;
+    border-radius: 8px;
+    background: var(--secondary-bg-color);
+    border-left: 4px solid;
+    color: var(--text-color);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    position: relative;
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+.message-success {
+    border-left-color: #28a745;
+}
+
+.message-error {
+    border-left-color: #dc3545;
+}
+
+.message-warning {
+    border-left-color: #ffc107;
+}
+
+.message-info {
+    border-left-color: #17a2b8;
+}
+
+.message-close {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: none;
+    border: none;
+    color: var(--text-color);
+    font-size: 24px;
+    cursor: pointer;
+    padding: 0;
+    width: 24px;
+    height: 24px;
+    line-height: 24px;
+    opacity: 0.6;
+    transition: opacity 0.2s;
+}
+
+.message-close:hover {
+    opacity: 1;
 }
 
 /* Responsive Design */
