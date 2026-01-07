@@ -14,6 +14,18 @@
 </div>
 <div class="detailed_view_container">
     <h2>{{ dataset.title }}</h2>
+    {% if dataset.thumbnail %}
+        <div class="dataset-thumbnail">
+            <img src="{{ dataset.thumbnail }}" alt="{{ dataset.title }} thumbnail">
+        </div>
+    {% endif %}
+    {% if dataset.link %}
+        <p>
+            <a href="{{ dataset.link }}" target="_blank" rel="noopener noreferrer">
+                {{ dataset.title }}
+            </a>
+        </p>
+    {% endif %}
     {% if dataset.description %}
     <p>Description:</p>
     <p>{{ dataset.description }}</p>

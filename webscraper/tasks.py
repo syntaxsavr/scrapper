@@ -45,7 +45,7 @@ def scrap_huggingface_datasets(query):
 
     for item in scraped_items:
         if not Dataset.objects.filter(title=item["title"]).exists():
-            Dataset.objects.create(title=item["title"], description=item["description"])
+            Dataset.objects.create(title=item["title"], description=item["description"], link=item["link"])
 
     retrigger_task = search_datasets.delay(query)
 
@@ -64,18 +64,24 @@ def scrape_kaggle_task(self, query: str, limit: int):
         added_count = 0
         for item in results:
             if not Dataset.objects.filter(title=item["title"]).exists():
-                Dataset.objects.create(title=item["title"], description=item["link"])
+                Dataset.objects.create(title=item["title"] ,description=("Uploaded to kaggle on: "+item["date"]), link=item["link"], thumbnail=item["thumbnail"])
                 added_count += 1
+        
+        retrigger_task = search_datasets.delay(query)
+
         return {
             "query": query,
             "total_scraped": len(results),
-            "added": added_count
+            "added": added_count,
+            "retrigger_task_id": retrigger_task.id
         }
+    
     except Exception:
         return {
             "query": query,
             "total_scraped": 0,
-            "added": 0
+            "added": 0,
+            "retrigger_failed": True
         }
     finally:
         if acquired:
