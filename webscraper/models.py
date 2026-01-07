@@ -14,13 +14,14 @@ class Log(models.Model):
 class Dataset(models.Model):
     title = models.CharField(max_length=200)
     description = models.TextField(blank=True)
-    thumbnail = models.URLField(blank=True)
     # HuggingFace metadata
     author = models.CharField(max_length=200, blank=True)  # dataset creator/owner
     tags = models.TextField(blank=True)  # comma-separated tags
     downloads = models.IntegerField(null=True, blank=True)  # number of downloads
     likes = models.IntegerField(null=True, blank=True)  # number of likes/favorites
     url = models.URLField(max_length=1000, blank=True)  # HuggingFace URL
+    # Kaggle data
+    thumbnail = models.URLField(max_length=1000, blank=True)
     
     created_at = models.DateTimeField(auto_now_add=True)
 
