@@ -146,10 +146,85 @@ a {
     color: var(--text-color);
 }
 
+/* Hero Section */
+.hero-section {
+    background: linear-gradient(135deg, var(--secondary-bg-color) 0%, var(--nav-bg) 100%);
+    padding: 40px 20px;
+    margin-bottom: 30px;
+    border-radius: 8px;
+    max-width: 800px;
+    margin-left: auto;
+    margin-right: auto;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    border: 1px solid var(--border-color);
+}
+
+.hero-content {
+    text-align: center;
+}
+
+.hero-title {
+    font-size: 1.8em;
+    color: var(--primary-color);
+    margin-bottom: 15px;
+    font-weight: 600;
+}
+
+.hero-subtitle {
+    font-size: 1.1em;
+    color: var(--text-muted);
+    margin-bottom: 25px;
+    line-height: 1.5;
+}
+
+.hero-cta {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.btn-hero {
+    padding: 10px 25px;
+    font-size: 1em;
+    font-weight: 500;
+    border-radius: 6px;
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+.btn-hero.btn-primary {
+    background: var(--primary-color);
+    color: var(--primary-bg-color);
+}
+
+.btn-hero.btn-primary:hover {
+    background: var(--search-hover-color);
+    transform: translateY(-2px);
+}
+
+.btn-hero.btn-secondary {
+    background: transparent;
+    color: var(--primary-color);
+    border: 2px solid var(--primary-color);
+}
+
+.btn-hero.btn-secondary:hover {
+    background: var(--primary-color);
+    color: var(--primary-bg-color);
+    transform: translateY(-2px);
+}
+
+/* Search Container Adjustments */
 .search-container {
     display: flex;
     justify-content: center;
     margin-top: 10vh;
+}
+
+/* When hero is shown, reduce search container margin */
+.hero-section ~ .search-container {
+    margin-top: 40px;
 }
 
 #search-form input[type="text"] {
@@ -703,6 +778,7 @@ a {
     opacity: 1;
 }
 
+/* Footer Styles */
 /* Responsive Design */
 @media (max-width: 768px) {
     .profile-header {
@@ -723,5 +799,36 @@ a {
     .nav-right {
         flex-direction: column;
         gap: 8px;
+    }
+    
+    /* Hero Section Mobile Styles */
+    .hero-section {
+        padding: 30px 15px;
+    }
+    
+    .hero-title {
+        font-size: 1.5em;
+    }
+    
+    .hero-subtitle {
+        font-size: 1em;
+    }
+    
+    .hero-cta {
+        flex-direction: column;
+    }
+    
+    .btn-hero {
+        width: 100%;
+    }
+}
+
+@media (max-width: 480px) {
+    .hero-title {
+        font-size: 1.3em;
+    }
+    
+    .hero-subtitle {
+        font-size: 0.95em;
     }
 }
