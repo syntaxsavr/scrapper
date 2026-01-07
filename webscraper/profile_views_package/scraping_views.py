@@ -151,16 +151,28 @@ def scrape_detail_view(request, scrape_id):
     """View individual scrape with all results"""
     scrape = get_object_or_404(UserScrape, id=scrape_id, user=request.user)  # make sure user owns it
     
-    # get scraped items
-    items = scrape.items.all()  # all items from this scrape
+    # get scraped items with pagination
+    from django.core.paginator import Paginator
+    
+    items = scrape.items.all().order_by('-created_at')  # all items from this scrape, newest first
     starred_items = items.filter(is_starred=True)  # user starred items
+    
+    # pagination - 20 items per page
+    paginator = Paginator(items, 20)
+    page_number = request.GET.get('page', 1)
+    page_obj = paginator.get_page(page_number)
+    
+    # get all user projects for the dropdown
+    all_projects = ScrapingProject.objects.filter(user=request.user)
     
     context = {
         'scrape': scrape,
-        'items': items,
+        'page_obj': page_obj,
+        'items': page_obj,  # for template compatibility
         'starred_items': starred_items,
         'total_items': items.count(),
         'starred_count': starred_items.count(),
+        'all_projects': all_projects,  # add projects for dropdown
     }
     return render(request, 'scraping/scrape_detail.html', context)
 
@@ -225,3 +237,81 @@ def stats_api_view(request):
         'status_distribution': status_distribution,
         'project_stats': project_stats,
     })
+
+
+@login_required
+def toggle_bookmark_api(request, scrape_id):
+    """API endpoint to toggle bookmark status of a scrape"""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'POST method required'}, status=405)
+    
+    scrape = get_object_or_404(UserScrape, id=scrape_id, user=request.user)
+    scrape.is_bookmarked = not scrape.is_bookmarked
+    scrape.save()
+    
+    return JsonResponse({
+        'success': True,
+        'is_bookmarked': scrape.is_bookmarked,
+        'message': 'Bookmarked' if scrape.is_bookmarked else 'Bookmark removed'
+    })
+
+
+@login_required
+def toggle_star_api(request, item_id):
+    """API endpoint to toggle star status of a scraped item"""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'POST method required'}, status=405)
+    
+    item = get_object_or_404(ScrapedDataItem, id=item_id, scrape__user=request.user)
+    item.is_starred = not item.is_starred
+    item.save()
+    
+    return JsonResponse({
+        'success': True,
+        'is_starred': item.is_starred,
+        'message': 'Starred' if item.is_starred else 'Star removed'
+    })
+
+
+@login_required
+def add_scrape_to_project(request, scrape_id):
+    """Add an existing scrape to a project"""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'POST method required'}, status=405)
+    
+    scrape = get_object_or_404(UserScrape, id=scrape_id, user=request.user)
+    project_id = request.POST.get('project_id')
+    
+    if project_id:
+        project = get_object_or_404(ScrapingProject, id=project_id, user=request.user)
+        scrape.project = project
+        scrape.save()
+        
+        return JsonResponse({
+            'success': True,
+            'message': f'Scrape added to project "{project.name}"',
+            'project_name': project.name
+        })
+    else:
+        # Remove from project
+        scrape.project = None
+        scrape.save()
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Scrape removed from project'
+        })
+
+
+@login_required
+def delete_scrape(request, scrape_id):
+    """Delete a scrape and all its items"""
+    scrape = get_object_or_404(UserScrape, id=scrape_id, user=request.user)
+    
+    if request.method == 'POST':
+        query = scrape.query
+        scrape.delete()  # This will cascade delete all ScrapedDataItem objects
+        messages.success(request, f'Scrape "{query}" has been deleted.')
+        return redirect('scrapes')
+    
+    return redirect('edit_scrape', scrape_id=scrape_id)

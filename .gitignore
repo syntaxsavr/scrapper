@@ -10,3 +10,4 @@ stop_all.bat
 .vscode/
 celerybeat-schedule
 db.sqlite3
+**.fish

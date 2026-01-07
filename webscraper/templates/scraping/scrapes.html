@@ -154,6 +154,47 @@
                             <i class="fas fa-bookmark"></i> Bookmarked
                         </button>
                     {% endif %}
+                    
+                    <!-- Add to Project Dropdown -->
+                    <div class="btn-group">
+                        <button class="btn btn-sm btn-outline-primary dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            <i class="fas fa-folder-plus"></i> 
+                            {% if scrape.project %}
+                                Change Project
+                            {% else %}
+                                Add to Project
+                            {% endif %}
+                        </button>
+                        <div class="dropdown-menu dropdown-menu-right">
+                            {% if projects %}
+                                {% for project in projects %}
+                                    <a class="dropdown-item project-assign-btn" href="#" 
+                                       data-scrape-id="{{ scrape.id }}" 
+                                       data-project-id="{{ project.id }}"
+                                       data-project-name="{{ project.name }}">
+                                        <span style="display:inline-block;width:12px;height:12px;background-color:{{ project.color }};border-radius:2px;margin-right:5px;"></span>
+                                        {{ project.name }}
+                                        {% if scrape.project and scrape.project.id == project.id %}
+                                            <i class="fas fa-check text-success"></i>
+                                        {% endif %}
+                                    </a>
+                                {% endfor %}
+                                {% if scrape.project %}
+                                    <div class="dropdown-divider"></div>
+                                    <a class="dropdown-item text-danger project-remove-btn" href="#" 
+                                       data-scrape-id="{{ scrape.id }}">
+                                        <i class="fas fa-times"></i> Remove from Project
+                                    </a>
+                                {% endif %}
+                            {% else %}
+                                <span class="dropdown-item text-muted">No projects available</span>
+                                <div class="dropdown-divider"></div>
+                                <a class="dropdown-item" href="{% url 'create_project' %}">
+                                    <i class="fas fa-plus"></i> Create Project
+                                </a>
+                            {% endif %}
+                        </div>
+                    </div>
                 </div>
             </div>
             {% endfor %}
@@ -182,31 +223,158 @@
 
 {% block extra_js %}
 <script>
-// scrapes list interactions
 document.addEventListener('DOMContentLoaded', function() {
-    // bookmark toggle functionality - would need api endpoint
     const bookmarkBtns = document.querySelectorAll('.bookmark-btn');
     
     bookmarkBtns.forEach(btn => {
         btn.addEventListener('click', function() {
             const scrapeId = this.dataset.scrapeId;
-            const isBookmarked = this.classList.contains('bookmarked');
+            const button = this;
+            button.disabled = true;
             
-            // toggle bookmark status
-            if (isBookmarked) {
-                this.classList.remove('bookmarked', 'btn-warning');
-                this.classList.add('btn-outline-warning');
-                this.innerHTML = '<i class="fas fa-bookmark"></i> Bookmark';
-            } else {
-                this.classList.add('bookmarked', 'btn-warning');
-                this.classList.remove('btn-outline-warning');
-                this.innerHTML = '<i class="fas fa-bookmark"></i> Bookmarked';
+            fetch(`/api/scrapes/${scrapeId}/bookmark/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken'),
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    if (data.is_bookmarked) {
+                        button.classList.add('bookmarked', 'btn-warning');
+                        button.classList.remove('btn-outline-warning');
+                        button.innerHTML = '<i class="fas fa-bookmark"></i> Bookmarked';
+                    } else {
+                        button.classList.remove('bookmarked', 'btn-warning');
+                        button.classList.add('btn-outline-warning');
+                        button.innerHTML = '<i class="fas fa-bookmark"></i> Bookmark';
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Failed to update bookmark');
+            })
+            .finally(() => {
+                button.disabled = false;
+            });
+        });
+    });
+    
+    // Handle project assignment
+    const projectAssignBtns = document.querySelectorAll('.project-assign-btn');
+    projectAssignBtns.forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const scrapeId = this.dataset.scrapeId;
+            const projectId = this.dataset.projectId;
+            const projectName = this.dataset.projectName;
+            
+            assignScrapeToProject(scrapeId, projectId, projectName);
+        });
+    });
+    
+    // Handle project removal
+    const projectRemoveBtns = document.querySelectorAll('.project-remove-btn');
+    projectRemoveBtns.forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const scrapeId = this.dataset.scrapeId;
+            
+            if (confirm('Remove this scrape from its project?')) {
+                removeScrapeFromProject(scrapeId);
             }
-            
-            // could send ajax request here to update bookmark status
-            console.log('Toggle bookmark for scrape:', scrapeId);
         });
     });
 });
+
+function assignScrapeToProject(scrapeId, projectId, projectName) {
+    const formData = new FormData();
+    formData.append('project_id', projectId);
+    
+    fetch(`/api/scrapes/${scrapeId}/add-to-project/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+        },
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Show success message
+            showToast(data.message, 'success');
+            // Reload page to reflect changes
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            showToast('Failed to add scrape to project', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showToast('Failed to add scrape to project', 'error');
+    });
+}
+
+function removeScrapeFromProject(scrapeId) {
+    const formData = new FormData();
+    formData.append('project_id', '');
+    
+    fetch(`/api/scrapes/${scrapeId}/add-to-project/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+        },
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast(data.message, 'success');
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            showToast('Failed to remove scrape from project', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showToast('Failed to remove scrape from project', 'error');
+    });
+}
+
+function showToast(message, type = 'info') {
+    // Simple toast notification
+    const toast = document.createElement('div');
+    toast.className = `alert alert-${type === 'success' ? 'success' : 'danger'} toast-notification`;
+    toast.style.position = 'fixed';
+    toast.style.top = '20px';
+    toast.style.right = '20px';
+    toast.style.zIndex = '9999';
+    toast.style.minWidth = '250px';
+    toast.innerHTML = `<i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i> ${message}`;
+    
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.remove();
+    }, 3000);
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
 </script>
 {% endblock %}

@@ -32,7 +32,13 @@ urlpatterns = [
     path("scrapes/", scraping_views.scrapes_view, name="scrapes"),  # list all scrapes
     path("scrapes/<int:scrape_id>/", scraping_views.scrape_detail_view, name="scrape_detail"),  # scrape details
     path("scrapes/<int:scrape_id>/edit/", scraping_views.edit_scrape_view, name="edit_scrape"),  # edit scrape
+    path("scrapes/<int:scrape_id>/delete/", scraping_views.delete_scrape, name="delete_scrape"),  # delete scrape
     path("api/scraping-stats/", scraping_views.stats_api_view, name="scraping_stats_api"),  # stats for charts
+    
+    # Scraping API endpoints - interactive actions
+    path("api/scrapes/<int:scrape_id>/bookmark/", scraping_views.toggle_bookmark_api, name="toggle_bookmark"),  # bookmark toggle
+    path("api/items/<int:item_id>/star/", scraping_views.toggle_star_api, name="toggle_star"),  # star toggle
+    path("api/scrapes/<int:scrape_id>/add-to-project/", scraping_views.add_scrape_to_project, name="add_scrape_to_project"),  # project management
 
     # API URLs - background tasks
     path("api/search/", views.api_search, name="api_search"),  # start search
