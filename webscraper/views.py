@@ -1,8 +1,8 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse
 from django.views.decorators.http import require_GET
-from .tasks import search_datasets, run_hugging_face_search_task  # celery tasks
-from django.contrib.auth.forms import AuthenticationForm
+from .tasks import search_datasets, scrap_huggingface_datasets, run_hugging_face_search_task
+from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth import login
 from django.contrib import messages
 from .models import Dataset, UserProfile  # our models
@@ -61,6 +61,25 @@ def api_search(request):
         response_data["scrape_id"] = user_scrape.id
 
     return JsonResponse(response_data)
+
+def api_task_status(_, task_id):
+    task = AsyncResult(task_id)
+
+    if task.ready():
+        result = task.result
+        response = {"status": "completed"}
+
+        if "results" in result:
+            response["results"] = result["results"]
+
+        if "retrigger_task_id" in result:
+            response["retrigger_task_id"] = result["retrigger_task_id"]
+
+        return JsonResponse(response)
+    else:
+        return JsonResponse({
+            "status": "pending",
+        })
 
 def login_view(request):
     if request.user.is_authenticated:  # already logged in

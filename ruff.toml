@@ -1,0 +1,34 @@
+# Exclude a variety of commonly ignored directories.
+exclude = [
+    ".direnv",
+    ".git",
+    ".git-rewrite",
+    ".pyenv",
+    ".pytype",
+    ".ruff_cache",
+    ".venv",
+    ".vscode",
+    "__pypackages__",
+    "_build",
+    "buck-out",
+    "build",
+    "dist",
+    "node_modules",
+    "site-packages",
+    "venv",
+    "mutants",
+    ".github",
+    "__pycache__",
+    "static",
+    "templates",
+    "Z_scripts_do_not_push_onto_prod_server",
+]
+
+# Same as Black.
+line-length = 88
+indent-width = 4
+
+
+[lint]
+select = ["E", "F", "B", "SIM", "DJ"]
+ignore = ["E501"]

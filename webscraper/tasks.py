@@ -1,5 +1,7 @@
 from celery import shared_task
+from django.db.models import Q
 from .utils.hugging_face.fetch_datasets import fetch_huggingface_datasets
+from .utils.search.scoring import calculate_search_score
 from .models import Dataset
 from django.utils import timezone
 
