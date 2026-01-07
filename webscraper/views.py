@@ -18,15 +18,34 @@ def api_search(request):
     if not query:  # need something to search
         return JsonResponse({"error": "No query provided"}, status=400)
 
-    # Start both search tasks in parallel
-    local_task = search_datasets.delay(query)
-    hf_task = scrap_huggingface_datasets.delay(query)
+    # Create user scrape record if user is authenticated
+    user_scrape_id = None
+    if request.user.is_authenticated:
+        from .models import UserScrape
+        from django.utils import timezone
+        
+        user_scrape = UserScrape.objects.create(
+            user=request.user,
+            query=query,
+            source='hugging_face',
+            status='pending'
+        )
+        user_scrape_id = user_scrape.id
 
-    return JsonResponse({
+    # Start both search tasks in parallel (pass user_scrape_id if exists)
+    local_task = search_datasets.delay(query, user_scrape_id)
+    hf_task = scrap_huggingface_datasets.delay(query, user_scrape_id)
+
+    response_data = {
         "task_ids": [local_task.id, hf_task.id],
         "status": "started",
         "message": f"Search started for '{query}'",
-    })
+    }
+    
+    if user_scrape_id:
+        response_data["scrape_id"] = user_scrape_id
+
+    return JsonResponse(response_data)
 
 def api_task_status(_, task_id):
     task = AsyncResult(task_id)
