@@ -4,20 +4,24 @@ from webscraper.tasks import scrape_kaggle_task
 from unittest.mock import patch, MagicMock
 from django.test import TestCase
 
-def make_scraper_with_mock_driver():
-    mock_driver = MagicMock()
-    with patch("scraper.kaggle.webdriver.Chrome", return_value=mock_driver):
-        scraper = KaggleScraperSelenium()
-    return scraper, mock_driver
-
 
 class ScraperKaggleTests(TestCase):
 
     def setUp(self):
+        self.chrome_patcher = patch('scrapers.kaggle.scraper_kaggle.webdriver.Chrome')
+        self.mock_chrome = self.chrome_patcher.start()
+        self.addCleanup(self.chrome_patcher.stop) 
+        
+        # Setup mock driver
+        self.mock_driver = MagicMock()
+        self.mock_chrome.return_value = self.mock_driver
+        
         self.scraper = KaggleScraperSelenium()
+
 
     def tearDown(self):
         self.scraper.close()
+        self.scraper = None
 
     def test_url_builder(self):
         url = self.scraper.build_search_url("cars")
@@ -151,14 +155,15 @@ class ScraperKaggleTests(TestCase):
             results = self.scraper.scrape("test1_lim0", -1)
             self.assertEqual(len(results), 0)
 
+    @patch("webscraper.tasks.search_datasets")
     @patch("webscraper.tasks.KaggleScraperSelenium")
-    def test_scraper_task(self, mock_scraper_class):
+    def test_scraper_task(self, mock_scraper_class, mock_search_datasets):
          with open("webscraper/tests/kaggle_test1.html", encoding="utf-8") as file:
             results = []
             html = file.read()
             file.close()
             self.scraper.fetch_page = MagicMock(return_value=html)
-
+            
             mock_driver = MagicMock()
             mock_driver.page_source = html
             self.scraper.driver = mock_driver
@@ -166,6 +171,8 @@ class ScraperKaggleTests(TestCase):
             self.scraper.click_next_button = MagicMock(return_value=True)
 
             mock_scraper_class.return_value = self.scraper
+
+            mock_search_datasets.return_value = MagicMock(id="task-123")
             
             # we loop over the same 20 items over and over thus only 20 added
             results = scrape_kaggle_task("test1_lim200", 200)
