@@ -19,8 +19,7 @@ if settings.DEBUG:
 # Add Sentry test route in development environment
 if ENVIRONMENT == 'development':
     def trigger_error(request):
-        division_by_zero = 1 / 0
-        return
+        _ = 1 / 0
 
     urlpatterns += [
         path('sentry-debug/', trigger_error),

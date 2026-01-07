@@ -11,3 +11,8 @@ stop_all.bat
 celerybeat-schedule
 db.sqlite3
 **.fish
+mutants/
+report.html
+cosmic-ray.sqlite
+.coverage
+celerybeat-schedule
