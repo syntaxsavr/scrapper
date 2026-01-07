@@ -144,8 +144,26 @@ def scrap_huggingface_datasets(query, user_scrape_id=None):
 
         for item in scraped_items:
             if not Dataset.objects.filter(title=item["title"]).exists():
-                Dataset.objects.create(title=item["title"], description=item["description"])
+                Dataset.objects.create(
+                    title=item["title"],
+                    description=item.get("description", ""),
+                    author=item.get("author", ""),
+                    tags=item.get("tags", ""),
+                    downloads=item.get("downloads"),
+                    likes=item.get("likes"),
+                    url=item.get("url", "")
+                )
                 added_count += 1
+            else:
+                # Update existing dataset with latest info from HuggingFace
+                dataset = Dataset.objects.get(title=item["title"])
+                dataset.description = item.get("description", "")
+                dataset.author = item.get("author", "")
+                dataset.tags = item.get("tags", "")
+                dataset.downloads = item.get("downloads")
+                dataset.likes = item.get("likes")
+                dataset.url = item.get("url", "")
+                dataset.save()
         
         # Update user scrape with scraping results
         if user_scrape_id:
