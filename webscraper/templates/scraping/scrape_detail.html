@@ -74,6 +74,23 @@
                                 {% endif %}
                             </div>
                         </div>
+                        <!-- Action buttons -->
+                        {% if scrape.status == 'running' or scrape.status == 'pending' %}
+                            <button class="btn btn-danger" onclick="cancelScrape({{ scrape.id }})">
+                                <i class="fas fa-stop"></i> Cancel Scrape
+                            </button>
+                        {% endif %}
+                        
+                        {% if scrape.status == 'completed' or scrape.status == 'failed' %}
+                            <button class="btn btn-success" onclick="rerunScrape({{ scrape.id }})">
+                                <i class="fas fa-redo"></i> Rerun Scrape
+                            </button>
+                        {% endif %}
+                        
+                        <button class="btn btn-info" onclick="showScheduleModal()">
+                            <i class="fas fa-calendar-alt"></i> Schedule
+                        </button>
+                        
                         <a href="{% url 'edit_scrape' scrape.id %}" class="btn btn-primary">
                             <i class="fas fa-edit"></i> Edit Scrape
                         </a>
@@ -288,6 +305,71 @@
     </div>
 </div>
 
+<!-- Schedule Modal -->
+<div id="scheduleModal" class="modal" style="display: none;">
+    <div class="modal-content" style="max-width: 500px; margin: 100px auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.2);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h3 style="margin: 0;"><i class="fas fa-calendar-alt"></i> Schedule Automatic Reruns</h3>
+            <button onclick="closeScheduleModal()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #999;">&times;</button>
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+            <p style="color: #666; margin-bottom: 15px;">Configure this scrape to run automatically at regular intervals.</p>
+            
+            <div style="margin-bottom: 15px;">
+                <label style="display: block; margin-bottom: 5px; font-weight: bold;">
+                    <i class="fas fa-clock"></i> Frequency
+                </label>
+                <select id="scheduleFrequency" class="form-control" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                    <option value="none" {% if scrape.schedule_frequency == 'none' %}selected{% endif %}>No Schedule</option>
+                    <option value="hourly" {% if scrape.schedule_frequency == 'hourly' %}selected{% endif %}>Every Hour</option>
+                    <option value="daily" {% if scrape.schedule_frequency == 'daily' %}selected{% endif %}>Daily</option>
+                    <option value="weekly" {% if scrape.schedule_frequency == 'weekly' %}selected{% endif %}>Weekly</option>
+                    <option value="monthly" {% if scrape.schedule_frequency == 'monthly' %}selected{% endif %}>Monthly</option>
+                </select>
+            </div>
+            
+            <div style="margin-bottom: 15px;">
+                <label style="display: flex; align-items: center; cursor: pointer;">
+                    <input type="checkbox" id="scheduleActive" {% if scrape.is_scheduled_active %}checked{% endif %} style="margin-right: 8px;">
+                    <span><i class="fas fa-power-off"></i> Enable Scheduled Runs</span>
+                </label>
+            </div>
+            
+            {% if scrape.next_run_at %}
+                <div style="padding: 10px; background: #f8f9fa; border-radius: 4px; margin-bottom: 15px;">
+                    <small style="color: #666;">
+                        <i class="fas fa-info-circle"></i> Next scheduled run: 
+                        <strong>{{ scrape.next_run_at|date:"M j, Y H:i" }}</strong>
+                    </small>
+                </div>
+            {% endif %}
+        </div>
+        
+        <div style="display: flex; justify-content: flex-end; gap: 10px;">
+            <button onclick="closeScheduleModal()" class="btn btn-secondary">
+                <i class="fas fa-times"></i> Cancel
+            </button>
+            <button onclick="saveSchedule()" class="btn btn-primary">
+                <i class="fas fa-save"></i> Save Schedule
+            </button>
+        </div>
+    </div>
+</div>
+
+<style>
+.modal {
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0,0,0,0.5);
+}
+</style>
+
 <script>
 let showingStarredOnly = false;
 
@@ -468,6 +550,114 @@ function getCookie(name) {
         }
     }
     return cookieValue;
+}
+
+// Cancel a running scrape
+function cancelScrape(scrapeId) {
+    if (!confirm('Are you sure you want to cancel this scrape?')) {
+        return;
+    }
+    
+    fetch(`/api/scrapes/${scrapeId}/cancel/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast(data.message, 'success');
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            showToast(data.message || 'Failed to cancel scrape', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showToast('Failed to cancel scrape', 'error');
+    });
+}
+
+// Rerun a scrape
+function rerunScrape(scrapeId) {
+    if (!confirm('This will create a new scrape with the same query. Continue?')) {
+        return;
+    }
+    
+    fetch(`/api/scrapes/${scrapeId}/rerun/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast(data.message, 'success');
+            setTimeout(() => {
+                window.location.href = `/scrapes/${data.scrape_id}/`;
+            }, 1500);
+        } else {
+            showToast(data.message || 'Failed to rerun scrape', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showToast('Failed to rerun scrape', 'error');
+    });
+}
+
+// Show schedule modal
+function showScheduleModal() {
+    document.getElementById('scheduleModal').style.display = 'block';
+}
+
+// Close schedule modal
+function closeScheduleModal() {
+    document.getElementById('scheduleModal').style.display = 'none';
+}
+
+// Save schedule settings
+function saveSchedule() {
+    const frequency = document.getElementById('scheduleFrequency').value;
+    const isActive = document.getElementById('scheduleActive').checked;
+    
+    const formData = new FormData();
+    formData.append('frequency', frequency);
+    formData.append('is_active', isActive);
+    
+    fetch(`/api/scrapes/{{ scrape.id }}/schedule/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast(data.message, 'success');
+            closeScheduleModal();
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            showToast(data.message || 'Failed to update schedule', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showToast('Failed to update schedule', 'error');
+    });
+}
+
+// Close modal when clicking outside
+window.onclick = function(event) {
+    const modal = document.getElementById('scheduleModal');
+    if (event.target == modal) {
+        closeScheduleModal();
+    }
 }
 </script>
 {% endblock %}

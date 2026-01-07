@@ -150,6 +150,18 @@ def scrap_huggingface_datasets(query, user_scrape_id=None):
 
         # Trigger a new search with the updated data (mark as retrigger)
         retrigger_task = search_datasets.delay(query, user_scrape_id, is_retrigger=True)
+        
+        # Wait for retrigger to complete and then mark main scrape as completed
+        if user_scrape_id:
+            try:
+                from .models import UserScrape
+                scrape = UserScrape.objects.get(id=user_scrape_id)
+                scrape.status = 'completed'
+                scrape.completed_at = timezone.now()
+                scrape.duration_seconds = (timezone.now() - start_time).total_seconds()
+                scrape.save()
+            except Exception:
+                pass
 
         return {
             "retrigger_task_id": retrigger_task.id

@@ -93,6 +93,11 @@
                                     {{ scrape.project.name }}
                                 </span>
                             {% endif %}
+                            {% if scrape.is_scheduled_active %}
+                                <span class="badge badge-info" title="Scheduled: {{ scrape.get_schedule_frequency_display }}">
+                                    <i class="fas fa-calendar-alt"></i> {{ scrape.get_schedule_frequency_display }}
+                                </span>
+                            {% endif %}
                         </div>
                     </div>
                     
@@ -142,6 +147,19 @@
                     <a href="{% url 'scrape_detail' scrape.id %}" class="btn btn-sm btn-primary">
                         <i class="fas fa-eye"></i> View
                     </a>
+                    
+                    {% if scrape.status == 'running' or scrape.status == 'pending' %}
+                        <button class="btn btn-sm btn-danger cancel-btn" data-scrape-id="{{ scrape.id }}">
+                            <i class="fas fa-stop"></i> Cancel
+                        </button>
+                    {% endif %}
+                    
+                    {% if scrape.status == 'completed' or scrape.status == 'failed' %}
+                        <button class="btn btn-sm btn-success rerun-btn" data-scrape-id="{{ scrape.id }}">
+                            <i class="fas fa-redo"></i> Rerun
+                        </button>
+                    {% endif %}
+                    
                     <a href="{% url 'edit_scrape' scrape.id %}" class="btn btn-sm btn-outline-secondary">
                         <i class="fas fa-edit"></i> Edit
                     </a>
@@ -376,5 +394,66 @@ function getCookie(name) {
     }
     return cookieValue;
 }
+
+// Cancel scrape button handlers
+document.querySelectorAll('.cancel-btn').forEach(button => {
+    button.addEventListener('click', function() {
+        const scrapeId = this.dataset.scrapeId;
+        if (!confirm('Are you sure you want to cancel this scrape?')) {
+            return;
+        }
+        
+        fetch(`/api/scrapes/${scrapeId}/cancel/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showToast(data.message, 'success');
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                showToast(data.message || 'Failed to cancel scrape', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showToast('Failed to cancel scrape', 'error');
+        });
+    });
+});
+
+// Rerun scrape button handlers
+document.querySelectorAll('.rerun-btn').forEach(button => {
+    button.addEventListener('click', function() {
+        const scrapeId = this.dataset.scrapeId;
+        
+        fetch(`/api/scrapes/${scrapeId}/rerun/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showToast(data.message, 'success');
+                setTimeout(() => {
+                    window.location.href = `/scrapes/${data.scrape_id}/`;
+                }, 1500);
+            } else {
+                showToast(data.message || 'Failed to rerun scrape', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showToast('Failed to rerun scrape', 'error');
+        });
+    });
+});
 </script>
 {% endblock %}
