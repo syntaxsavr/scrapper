@@ -32,6 +32,12 @@ class Dataset(models.Model):
     
     created_at = models.DateTimeField(auto_now_add=True)
     
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return self.title
+
     def get_source_display_name(self):
         """Get human-readable source name"""
         return dict(self.SOURCE_CHOICES).get(self.source, 'Unknown')
@@ -53,12 +59,6 @@ class Dataset(models.Model):
             'unknown': '📁'
         }
         return icons.get(self.source, '📁')
-
-    class Meta:
-        ordering = ['-created_at']
-
-    def __str__(self):
-        return self.title
 
 
 class UserProfile(models.Model):
