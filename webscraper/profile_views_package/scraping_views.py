@@ -474,6 +474,7 @@ def rerun_scrape(request, scrape_id):
     # Start the scraping tasks
     local_task = search_datasets.delay(scrape.query, new_scrape.id)
     hf_task = scrap_huggingface_datasets.delay(scrape.query, new_scrape.id)
+    kg_task = scrap_huggingface_datasets.delay(scrape.query, new_scrape.id)
     
     # Store task ID
     new_scrape.celery_task_id = hf_task.id
@@ -483,7 +484,7 @@ def rerun_scrape(request, scrape_id):
         'success': True,
         'message': 'Scrape started successfully',
         'scrape_id': new_scrape.id,
-        'task_ids': [local_task.id, hf_task.id]
+        'task_ids': [local_task.id, hf_task.id, kg_task.id]
     })
 
 

@@ -34,7 +34,7 @@ def _perform_search_with_scoring(query):
 
     return results_with_scores
 
-@shared_task
+@shared_task(queue='search')
 def search_datasets(query, user_scrape_id=None, is_retrigger=False):
     """Search existing datasets with scoring"""
     from django.utils import timezone
@@ -156,7 +156,8 @@ def scrap_huggingface_datasets(query, user_scrape_id=None):
                     tags=item.get("tags", ""),
                     downloads=item.get("downloads"),
                     likes=item.get("likes"),
-                    url=item.get("url", "")
+                    url=item.get("url", ""),
+                    thumbnail = ""
                 )
                 added_count += 1
             else:
@@ -172,45 +173,7 @@ def scrap_huggingface_datasets(query, user_scrape_id=None):
         
         # Update user scrape with scraping results
         if user_scrape_id:
-            try:
-                from .models import UserScrape, ScrapedDataItem
-                scrape = UserScrape.objects.get(id=user_scrape_id)
-                scrape.results_count = len(scraped_items)
-                scrape.results_data = {
-                    'scraped_items': scraped_items[:100],
-                    'added_count': added_count
-                }
-                scrape.save()
-                
-                # Delete existing HuggingFace items for this scrape to prevent duplicates
-                # Check for both non-null and non-empty author fields
-                ScrapedDataItem.objects.filter(scrape=scrape).exclude(
-                    Q(author__isnull=True) | Q(author='')
-                ).delete()
-                
-                # Create ScrapedDataItem records for scraped items (limit to 100)
-                for item in scraped_items[:100]:
-                    # Check if this item already exists to prevent duplicates
-                    if ScrapedDataItem.objects.filter(scrape=scrape, title=item['title']).exists():
-                        continue
-                    
-                    # Find the Dataset in our DB to get the proper internal URL
-                    dataset = Dataset.objects.filter(title=item['title']).first()
-                    internal_url = f"/detailed_view/{dataset.id}/" if dataset else item.get('url', '')
-                    
-                    ScrapedDataItem.objects.create(
-                        scrape=scrape,
-                        title=item['title'],
-                        description=item.get('description', ''),
-                        url=internal_url,  # Use internal URL if available
-                        downloads=item.get('downloads'),
-                        likes=item.get('likes'),
-                        author=item.get('author', ''),
-                        tags=item.get('tags', ''),
-                    )
-            except Exception as e:
-                print(f"Error updating HuggingFace scrape data: {e}")  # Log error
-                pass
+            user_update_with_results(user_scrape_id, scraped_items, added_count)
 
         # Trigger a new search with the updated data (mark as retrigger)
         retrigger_task = search_datasets.delay(query, user_scrape_id, is_retrigger=True)
@@ -244,34 +207,135 @@ def scrap_huggingface_datasets(query, user_scrape_id=None):
             except Exception:
                 pass
         raise
+    
     return {
         "retrigger_task_id": retrigger_task.id
     }
 
+def user_update_with_results(user_scrape_id, scraped_items, added_count):
+    try:
+        from .models import UserScrape, ScrapedDataItem
+        scrape = UserScrape.objects.get(id=user_scrape_id)
+        scrape.results_count = len(scraped_items)
+        scrape.results_data = {
+                    'scraped_items': scraped_items[:100],
+                    'added_count': added_count
+                }
+                # scrape.save()
+                
+                # Delete existing HuggingFace items for this scrape to prevent duplicates
+                # Check for both non-null and non-empty author fields
+        ScrapedDataItem.objects.filter(scrape=scrape).exclude(
+                    Q(author__isnull=True) | Q(author='')
+                ).delete()
+                
+                # Create ScrapedDataItem records for scraped items (limit to 100)
+        for item in scraped_items[:100]:
+                    # Check if this item already exists to prevent duplicates
+            if ScrapedDataItem.objects.filter(scrape=scrape, title=item['title']).exists():
+                continue
+                    
+                    # Find the Dataset in our DB to get the proper internal URL
+            dataset = Dataset.objects.filter(title=item['title']).first()
+            internal_url = f"/detailed_view/{dataset.id}/" if dataset else item.get('url', '')
+                    
+            ScrapedDataItem.objects.create(
+                        scrape=scrape,
+                        title=item['title'],
+                        description=item.get('description', ''),
+                        url=internal_url,  # Use internal URL if available
+                        downloads=item.get('downloads'),
+                        likes=item.get('likes'),
+                        author=item.get('author', ''),
+                        tags=item.get('tags', ''),
+                    )
+    except Exception as e:
+        print(f"Error updating HuggingFace scrape data: {e}")  # Log error
+        pass
+
+
 @shared_task(bind=True, max_retries=3, queue='scraping')
-def scrape_kaggle_task(self, query: str, limit: int):
+def scrape_kaggle_task(self, query: str, limit: int, user_scrape_id=None):
+
+    # check if worker is running
     acquired = lock.acquire(blocking=False)
     if not acquired:
         raise self.retry(countdown=6)   # scrapes can take up to 5,5s
+    
+    from django.utils import timezone
+    start_time = timezone.now()
+    
+    # Update user scrape status if provided
+    if user_scrape_id:
+        try:
+            from .models import UserScrape
+            scrape = UserScrape.objects.get(id=user_scrape_id)
+            scrape.status = 'running'
+            scrape.save()
+        except Exception:
+            pass
+
     try:
         scraper = KaggleScraperSelenium()
         results = scraper.scrape(query, limit)
         added_count = 0
         for item in results:
             if not Dataset.objects.filter(title=item["title"]).exists():
-                Dataset.objects.create(title=item["title"], description=item["link"])
+                Dataset.objects.create(
+                    title=item["title"] ,
+                    description=("Uploaded to kaggle on: "+item["date"]), 
+                    url=item["link"], 
+                    thumbnail=item["thumbnail"],
+                    author=item["author"],
+                    tags="")
                 added_count += 1
+            else:
+                # Update existing dataset with latest info from kaggle
+                dataset = Dataset.objects.get(title=item["title"])
+                dataset.description = ("Uploaded to kaggle on: "+item["date"])
+                dataset.author = item["author"]
+                dataset.tags = ""
+                dataset.url = item["link"]
+                dataset.save()
+        
+        # Update user scrape with scraping results
+        if user_scrape_id:
+            user_update_with_results(user_scrape_id, results, added_count)
+
+        retrigger_task = search_datasets.delay(query, user_scrape_id, is_retrigger=True)
+
+        # Wait for retrigger to complete and then mark main scrape as completed
+        if user_scrape_id:
+            try:
+                from .models import UserScrape
+                scrape = UserScrape.objects.get(id=user_scrape_id)
+                scrape.status = 'completed'
+                scrape.completed_at = timezone.now()
+                scrape.duration_seconds = (timezone.now() - start_time).total_seconds()
+                scrape.save()
+            except Exception:
+                pass
+
         return {
             "query": query,
             "total_scraped": len(results),
-            "added": added_count
+            "added": added_count,
+            "retrigger_task_id": retrigger_task.id
         }
-    except Exception:
-        return {
-            "query": query,
-            "total_scraped": 0,
-            "added": 0
-        }
+    
+    except Exception as e:
+        if user_scrape_id:
+            try:
+                from .models import UserScrape
+                scrape = UserScrape.objects.get(id=user_scrape_id)
+                scrape.status = 'failed'
+                scrape.error_message = str(e)
+                scrape.completed_at = timezone.now()
+                scrape.duration_seconds = (timezone.now() - start_time).total_seconds()
+                scrape.save()
+            except Exception:
+                pass
+        raise
     finally:
         if acquired:
             scraper.close()
