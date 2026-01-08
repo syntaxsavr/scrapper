@@ -139,7 +139,7 @@ def api_create_scrape(request):
     kg_task = scrape_kaggle_task.delay(query, 100, user_scrape.id)
 
     return JsonResponse({
-        "task_ids": [local_task.id, hf_task.id, kg_task.id]
+        "task_ids": [hf_task.id, kg_task.id]
     })
     
     # Store task ID for tracking/cancellation
