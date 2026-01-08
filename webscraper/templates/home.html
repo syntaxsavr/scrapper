@@ -5,7 +5,93 @@
 <script src="{% static 'js/search.js' %}"></script>
 {% endblock %}
 
+{% block extra_css %}
+<style>
+/* Ambient Global Hero (Always Visible) */
+.ambient-hero {
+    width: 100vw;
+    margin-left: calc(50% - 50vw);
+    margin-right: calc(50% - 50vw);
+
+    padding: 80px 20px 60px;
+    background:
+        radial-gradient(
+            circle at top,
+            rgba(187, 134, 252, 0.15),
+            transparent 60%
+        ),
+        linear-gradient(
+            180deg,
+            var(--nav-bg) 0%,
+            var(--primary-bg-color) 100%
+        );
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 20px;
+}
+
+.ambient-hero-inner {
+    max-width: 900px;
+    margin: 0 auto;
+    text-align: center;
+}
+
+.ambient-badge {
+    display: inline-block;
+    margin-bottom: 16px;
+    padding: 6px 14px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--primary-color);
+    background: rgba(187, 134, 252, 0.1);
+    border: 1px solid rgba(187, 134, 252, 0.3);
+    border-radius: 999px;
+}
+
+.ambient-title {
+    font-size: 2.4rem;
+    font-weight: 600;
+    margin: 0 0 18px;
+    line-height: 1.2;
+    color: var(--text-color);
+}
+
+.ambient-title span {
+    color: var(--primary-color);
+}
+
+.ambient-subtitle {
+    max-width: 700px;
+    margin: 0 auto;
+    font-size: 1.05rem;
+    color: var(--text-muted);
+    line-height: 1.6;
+}
+
+@media (max-width: 768px) {
+    .ambient-title {
+        font-size: 1.9rem;
+    }
+}
+</style>
+{% endblock %}
+
+
 {% block content %}
+<!-- Global Ambient Hero (Always Visible) -->
+<div class="ambient-hero">
+    <div class="ambient-hero-inner">
+        <span class="ambient-badge">Dataset Intelligence</span>
+        <h1 class="ambient-title">
+            Discover, Track & Automate <span>HuggingFace Datasets</span>
+        </h1>
+        <p class="ambient-subtitle">
+            A clean workspace for dataset discovery, monitoring, and scraping — built for scale.
+        </p>
+    </div>
+</div>
+
 <!-- Hero Section for Non-Logged-In Users -->
 {% if not user.is_authenticated %}
 <div class="hero-section">
