@@ -286,16 +286,16 @@ def scrape_kaggle_task(self, query: str, limit: int, user_scrape_id=None):
                     description=("Uploaded to kaggle on: "+item["date"]), 
                     url=item["link"], 
                     thumbnail=item["thumbnail"],
-                    author="",
+                    author=item["author"],
                     tags="")
                 added_count += 1
             else:
                 # Update existing dataset with latest info from kaggle
                 dataset = Dataset.objects.get(title=item["title"])
                 dataset.description = ("Uploaded to kaggle on: "+item["date"])
-                dataset.author = "",
-                dataset.tags = "",
-                dataset.url = item["link"],
+                dataset.author = item["author"]
+                dataset.tags = ""
+                dataset.url = item["link"]
                 dataset.save()
         
         # Update user scrape with scraping results
