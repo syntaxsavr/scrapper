@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse
 from django.contrib import messages
-from .tasks import search_datasets, scrap_huggingface_datasets
+from .tasks import search_datasets, scrap_huggingface_datasets, scrape_kaggle_task
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth import login
 from .models import Dataset
@@ -48,9 +48,10 @@ def api_search(request):
     # Also start HuggingFace scraping in the background to get more results
     # This populates the local database with new datasets
     huggingface_task = scrap_huggingface_datasets.delay(query, user_scrape_id=None)
+    kaggle_task = scrape_kaggle_task.delay(query, 100, user_scrape_id=None)
 
     response_data = {
-        "task_ids": [local_task.id, huggingface_task.id],
+        "task_ids": [local_task.id, huggingface_task.id, kaggle_task.id],
         "status": "started",
         "message": f"Search started for '{query}'",
         "is_authenticated": request.user.is_authenticated
@@ -134,6 +135,12 @@ def api_create_scrape(request):
     
     # Start the scraping task (HuggingFace scraping)
     hf_task = scrap_huggingface_datasets.delay(query, user_scrape.id)
+
+    kg_task = scrape_kaggle_task.delay(query, 100, user_scrape.id)
+
+    return JsonResponse({
+        "task_ids": [hf_task.id, kg_task.id]
+    })
     
     # Store task ID for tracking/cancellation
     user_scrape.celery_task_id = hf_task.id

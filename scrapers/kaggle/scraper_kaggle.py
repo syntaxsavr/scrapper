@@ -66,12 +66,16 @@ class KaggleScraperSelenium:
             date_span = li.find("span", attrs={"title": True})
             date_str = date_span["title"] if date_span else None
 
+            autohr_a = date_span.parent.find("a")
+            autohr_str = autohr_a.text if autohr_a else None
+
             results.append(
                 {
                     "title": title,
                     "link": link,
                     "thumbnail": thumbnail,
                     "date": date_str,
+                    "author": autohr_str,
                 }
             )
         return
@@ -160,11 +164,11 @@ class KaggleScraperSelenium:
     def close(self):
         self.driver.quit()
 
-# this is as of now for local testing only/ only runs locally
+#this is as of now for local testing only/ only runs locally
 # if __name__ == "__main__":
 #     scraper = KaggleScraperSelenium()
 #     try:
-#         results = scraper.scrape("car",31)
+#         results = scraper.scrape("world",2000)
 #         print("\nDatasets found:")
 #         for idx, title in enumerate(results, 1):
 #             print(f"{idx}. {title}")
