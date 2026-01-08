@@ -313,6 +313,13 @@
     gap: 5px;
 }
 
+.item-tags {
+    margin-top: 10px;
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
 .item-notes {
     margin-top: 12px;
     padding-top: 12px;

@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load humanize %}
 
 {% block title %}My Scrapes{% endblock %}
 
@@ -105,7 +106,15 @@
                         {% if scrape.status == 'completed' %}
                             <div class="stat">
                                 <i class="fas fa-database"></i>
-                                <strong>{{ scrape.results_count }}</strong> results
+                                <strong>
+                                    {% if scrape.results_count >= 100000 %}
+                                        100k+
+                                    {% elif scrape.results_count >= 1000 %}
+                                        {{ scrape.results_count|floatformat:0|intcomma }}
+                                    {% else %}
+                                        {{ scrape.results_count }}
+                                    {% endif %}
+                                </strong> results
                             </div>
                             <div class="stat">
                                 <i class="fas fa-clock"></i>

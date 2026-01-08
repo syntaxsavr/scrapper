@@ -1,6 +1,7 @@
 {% extends 'base.html' %}
 {% load static %}
 {% load string_filters %}
+{% load humanize %}
 
 {% block title %}{{ scrape.query }} - Scrape Details{% endblock %}
 
@@ -225,16 +226,23 @@
                             <div class="scraped-item {% if item.is_starred %}starred{% endif %}" 
                                  data-starred="{{ item.is_starred|yesno:'true,false' }}">
                                 <div class="item-header">
-                                    <h5>
-                                        {% if item.url %}
-                                            <a href="{{ item.url }}" target="_blank" rel="noopener">
+                                    <div style="display: flex; align-items: center; gap: 10px; flex: 1; flex-wrap: wrap;">
+                                        <h5 style="margin: 0; flex: 1; min-width: 200px;">
+                                            {% if item.url %}
+                                                <a href="{{ item.url }}" target="_blank" rel="noopener">
+                                                    {{ item.title }}
+                                                    <i class="fas fa-external-link-alt"></i>
+                                                </a>
+                                            {% else %}
                                                 {{ item.title }}
-                                                <i class="fas fa-external-link-alt"></i>
-                                            </a>
-                                        {% else %}
-                                            {{ item.title }}
+                                            {% endif %}
+                                        </h5>
+                                        {% if item.source and item.source != 'unknown' %}
+                                            <span style="background-color: {{ item.get_source_badge_color }}; color: #000; padding: 4px 10px; border-radius: 4px; font-size: 11px; font-weight: bold; white-space: nowrap;">
+                                                {{ item.get_source_icon }} {{ item.get_source_display_name }}
+                                            </span>
                                         {% endif %}
-                                    </h5>
+                                    </div>
                                     <div class="item-actions">
                                         <button class="btn btn-sm btn-outline-warning star-btn" 
                                                 onclick="toggleStar({{ item.id }}, this)"
@@ -249,18 +257,25 @@
                                 {% endif %}
                                 
                                 <div class="item-meta">
-                                    {% if item.source %}
-                                        <span><i class="fas fa-globe"></i> {{ item.source }}</span>
+                                    {% if item.author %}
+                                        <span><i class="fas fa-user"></i> {{ item.author }}</span>
+                                    {% endif %}
+                                    {% if item.downloads %}
+                                        <span><i class="fas fa-download"></i> {{ item.downloads|intcomma }}</span>
+                                    {% endif %}
+                                    {% if item.likes %}
+                                        <span><i class="fas fa-heart"></i> {{ item.likes|intcomma }}</span>
                                     {% endif %}
                                     <span><i class="fas fa-calendar"></i> {{ item.created_at|date:"M j, Y g:i A" }}</span>
-                                    {% if item.tags %}
-                                        <div class="tags">
-                                            {% for tag in item.tags|split_tags:"," %}
-                                                <span class="tag">{{ tag }}</span>
-                                            {% endfor %}
-                                        </div>
-                                    {% endif %}
                                 </div>
+                                
+                                {% if item.tags %}
+                                    <div class="item-tags">
+                                        {% for tag in item.tags|split_tags:"," %}
+                                            <span class="tag">{{ tag }}</span>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
                                 
                                 {% if item.notes %}
                                     <div class="item-notes">

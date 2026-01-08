@@ -129,28 +129,24 @@ def api_create_scrape(request):
     user_scrape = UserScrape.objects.create(
         user=request.user,
         query=query,
-        source='hugging_face',
+        source='mixed',
         status='pending'
     )
     
-    # Start the scraping task (HuggingFace scraping)
+    # Start all scraping tasks
+    local_task = search_datasets.delay(query, user_scrape.id)
     hf_task = scrap_huggingface_datasets.delay(query, user_scrape.id)
-
     kg_task = scrape_kaggle_task.delay(query, 100, user_scrape.id)
-
-    return JsonResponse({
-        "task_ids": [local_task.id, hf_task.id, kg_task.id]
-    })
     
-    # Store task ID for tracking/cancellation
-    user_scrape.celery_task_id = hf_task.id
+    # Store primary task ID for tracking/cancellation
+    user_scrape.celery_task_id = local_task.id
     user_scrape.save()
     
     return JsonResponse({
         "status": "success",
         "message": "Scrape created successfully",
         "scrape_id": user_scrape.id,
-        "task_id": hf_task.id
+        "task_ids": [local_task.id, hf_task.id, kg_task.id]
     })
 
 def login_view(request):

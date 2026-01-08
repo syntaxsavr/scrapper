@@ -252,11 +252,17 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Header with result count and Add to Scrapes button
         html += '<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">';
-        html += '<h2>Found ' + displayedResults.length + ' result(s) for "' + escapeHtml(query) + '"';
-        if (stillLoading) {
-            html += ' <i class="fas fa-spinner fa-spin" style="font-size: 20px; color: #007bff; margin-left: 10px;"></i>';
+        
+        // Adjust text if exactly 100 results (likely more available)
+        if (displayedResults.length === 100 && !stillLoading) {
+            html += '<h2>Displaying first 100 results for "' + escapeHtml(query) + '"</h2>';
+        } else {
+            html += '<h2>Found ' + displayedResults.length + ' result(s) for "' + escapeHtml(query) + '"';
+            if (stillLoading) {
+                html += ' <i class="fas fa-spinner fa-spin" style="font-size: 20px; color: #007bff; margin-left: 10px;"></i>';
+            }
+            html += '</h2>';
         }
-        html += '</h2>';
         
         // Show "Add to Scrapes" button if user is logged in
         if (isAuthenticated) {
@@ -301,7 +307,18 @@ document.addEventListener('DOMContentLoaded', function() {
             displayedResults.forEach(function(result, index) {
                 html += '<a href="/detailed_view/' + result.id + '/" class="result-link" data-result-index="' + index + '" data-result-title="' + escapeHtml(result.title || '').toLowerCase() + '" data-result-desc="' + escapeHtml(result.description || '').toLowerCase() + '" data-result-author="' + escapeHtml(result.author || '').toLowerCase() + '" data-result-tags="' + escapeHtml(result.tags || '').toLowerCase() + '">';
                 html += '<div class="result-item" style="animation: fadeIn 0.3s ease-in;">';
-                html += '<h3>' + escapeHtml(result.title) + '</h3>';
+                
+                // Title with source badge
+                html += '<div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px; flex-wrap: wrap;">';
+                html += '<h3 style="margin: 0; flex: 1;">' + escapeHtml(result.title) + '</h3>';
+                if (result.source && result.source !== 'unknown') {
+                    const sourceBadgeColor = result.source === 'huggingface' ? '#FFD21E' : '#20BEFF';
+                    const sourceBadgeIcon = result.source === 'huggingface' ? '🤗' : '📊';
+                    const sourceName = result.source === 'huggingface' ? 'HuggingFace' : 'Kaggle';
+                    html += '<span style="background: ' + sourceBadgeColor + '; color: #000; padding: 4px 10px; border-radius: 4px; font-size: 12px; font-weight: bold; white-space: nowrap;">' +
+                            sourceBadgeIcon + ' ' + sourceName + '</span>';
+                }
+                html += '</div>';
                 
                 // Description with truncation
                 if (result.description) {

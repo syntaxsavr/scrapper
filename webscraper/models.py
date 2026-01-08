@@ -12,18 +12,47 @@ class Log(models.Model):
         return self.message
 
 class Dataset(models.Model):
+    SOURCE_CHOICES = [
+        ('huggingface', 'HuggingFace'),
+        ('kaggle', 'Kaggle'),
+        ('unknown', 'Unknown'),
+    ]
+    
     title = models.CharField(max_length=200)
     description = models.TextField(blank=True)
+    source = models.CharField(max_length=20, choices=SOURCE_CHOICES, default='unknown')  # data source
     # HuggingFace metadata
     author = models.CharField(max_length=200, blank=True)  # dataset creator/owner
     tags = models.TextField(blank=True)  # comma-separated tags
     downloads = models.IntegerField(null=True, blank=True)  # number of downloads
     likes = models.IntegerField(null=True, blank=True)  # number of likes/favorites
-    url = models.URLField(max_length=1000, blank=True)  # HuggingFace URL
+    url = models.URLField(max_length=1000, blank=True)  # external URL
     # Kaggle data
     thumbnail = models.URLField(max_length=1000, blank=True)
     
     created_at = models.DateTimeField(auto_now_add=True)
+    
+    def get_source_display_name(self):
+        """Get human-readable source name"""
+        return dict(self.SOURCE_CHOICES).get(self.source, 'Unknown')
+    
+    def get_source_badge_color(self):
+        """Get color for source badge"""
+        colors = {
+            'huggingface': '#FFD21E',
+            'kaggle': '#20BEFF',
+            'unknown': '#6c757d'
+        }
+        return colors.get(self.source, '#6c757d')
+    
+    def get_source_icon(self):
+        """Get icon for source"""
+        icons = {
+            'huggingface': '🤗',
+            'kaggle': '📊',
+            'unknown': '📁'
+        }
+        return icons.get(self.source, '📁')
 
     class Meta:
         ordering = ['-created_at']
@@ -212,12 +241,19 @@ class UserScrape(models.Model):
 
 class ScrapedDataItem(models.Model):
     """Individual item from a scrape session"""
+    SOURCE_CHOICES = [
+        ('huggingface', 'HuggingFace'),
+        ('kaggle', 'Kaggle'),
+        ('unknown', 'Unknown'),
+    ]
+    
     scrape = models.ForeignKey(UserScrape, on_delete=models.CASCADE, related_name='items')  # which scrape this belongs to
     
     # item details
     title = models.CharField(max_length=500)  # dataset title
     description = models.TextField(blank=True)  # dataset description
     url = models.URLField(max_length=1000)  # link to original
+    source = models.CharField(max_length=20, choices=SOURCE_CHOICES, default='unknown')  # data source
     
     # metadata
     downloads = models.IntegerField(null=True, blank=True)  # how many downloads
@@ -233,3 +269,25 @@ class ScrapedDataItem(models.Model):
     
     def __str__(self):
         return f"{self.scrape.user.username} - {self.title[:50]}"
+    
+    def get_source_display_name(self):
+        """Get human-readable source name"""
+        return dict(self.SOURCE_CHOICES).get(self.source, 'Unknown')
+    
+    def get_source_badge_color(self):
+        """Get color for source badge"""
+        colors = {
+            'huggingface': '#FFD21E',
+            'kaggle': '#20BEFF',
+            'unknown': '#6c757d'
+        }
+        return colors.get(self.source, '#6c757d')
+    
+    def get_source_icon(self):
+        """Get icon for source"""
+        icons = {
+            'huggingface': '🤗',
+            'kaggle': '📊',
+            'unknown': '📁'
+        }
+        return icons.get(self.source, '📁')

@@ -4,7 +4,14 @@
 {% block content %}
 <div class="detailed_view_container">
     <div class="dataset-header">
-        <h2><i class="fas fa-database"></i> {{ dataset.title }} </h2>
+        <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 10px;">
+            <h2 style="margin: 0;"><i class="fas fa-database"></i> {{ dataset.title }}</h2>
+            {% if dataset.source and dataset.source != 'unknown' %}
+                <span class="source-badge" style="background-color: {{ dataset.get_source_badge_color }}; color: #000; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: bold; white-space: nowrap;">
+                    {{ dataset.get_source_icon }} {{ dataset.get_source_display_name }}
+                </span>
+            {% endif %}
+        </div>
         <div class="dataset-meta">
             {% if dataset.author %}
                 <span class="meta-item">
@@ -80,7 +87,14 @@
     <div class="mt-4 action-buttons">
         {% if dataset.url %}
         <a href="{{ dataset.url }}" target="_blank" rel="noopener" class="btn btn-primary">
-            <i class="fas fa-external-link-alt"></i> View on HuggingFace
+            <i class="fas fa-external-link-alt"></i> 
+            {% if dataset.source == 'huggingface' %}
+                View on HuggingFace
+            {% elif dataset.source == 'kaggle' %}
+                View on Kaggle
+            {% else %}
+                View Original Site
+            {% endif %}
         </a>
         {% endif %}
         <a href="{% url 'home' %}" class="btn btn-secondary">
